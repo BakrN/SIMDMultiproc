@@ -1,1 +1,10 @@
 .vscode/* 
+
+*.o
+*.d
+*.so
+*.a
+*.out
+*.exe
+*.dll
+*.lib
