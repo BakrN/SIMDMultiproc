@@ -60,18 +60,31 @@ matrix_t ** matrix_2decompose(matrix_t **matrix){
     return decomposed;
 }
 
-void * matrix_3decompose(matrix_t **matrix){
+matrix_t ** matrix_3decompose(matrix_t **matrix){
     if((*matrix)->x != (*matrix)->y){
         return NULL;
     }
+    matrix_t ** decomposed = malloc(5*sizeof(matrix_t *)); //array of ptrs to the decomposed matrices
+
     int new_size = (*matrix)->x /3 ;
     matrix_t * m0 = matrix_create(new_size, new_size,&(*matrix)->data);
-    matrix_t * m1 = matrix_create(new_size, new_size,&(*matrix)->data + new_size);
-    matrix_t * m2 = matrix_create(new_size, new_size,&(*matrix)->data + 2*new_size);
-    matrix_t * m3 = matrix_create(new_size, new_size,&(*matrix)->data + 3*new_size);
-    matrix_t * m4 = matrix_create(new_size, new_size,&(*matrix)->data + 4*new_size);
-    void * decomposed[5] = {&m0, &m1, &m2, &m3, &m4}; //array of ptrs to the decomposed matrices
-    return *decomposed;
+    decomposed[0] = m0; 
+    int * jump = &(*matrix)->data[new_size];
+    matrix_t * m1 = matrix_create(new_size, new_size,&jump);
+    decomposed[1] = m1; 
+    // matrix_print(&m1);
+    int * jump2 = &(*matrix)->data[2*new_size];
+    matrix_t * m2 = matrix_create(new_size, new_size,&jump2);
+    decomposed[2] = m2;
+    int * jump3 = &(*matrix)->data[3*new_size];
+    matrix_t * m3 = matrix_create(new_size, new_size,&jump3);
+    decomposed[3] = m3; 
+    int * jump4 = &(*matrix)->data[4*new_size];
+    matrix_t * m4 = matrix_create(new_size, new_size,&jump4);
+    decomposed[4] = m4; 
+    // matrix_print(&m2);
+
+    return decomposed;
 }
 
 void matrix_print(matrix_t **matrix){

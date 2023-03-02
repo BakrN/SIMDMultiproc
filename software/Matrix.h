@@ -15,7 +15,7 @@ int * matrix_getData(matrix_t **matrix);
 
 matrix_t ** matrix_2decompose(matrix_t **matrix);
 
-void * matrix_3decompose(matrix_t **matrix);
+matrix_t ** matrix_3decompose(matrix_t **matrix);
 
 void matrix_print(matrix_t **matrix);
 
