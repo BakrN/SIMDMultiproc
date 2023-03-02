@@ -2,13 +2,14 @@
 // cores send request here  or could poll 
 // contains scoreboard 
 // Has fsm send cmd // wait for ack 
-`include "array.v" 
 `include "scoreboard.sv"
 `include "defines.svh"
 module issuer ( 
     i_clk, 
     i_rstn, 
     i_cmd ,
+    i_ack , 
+    i_finish, 
     i_busy, 
     o_en_arr , 
     o_cmd, 
@@ -16,8 +17,12 @@ module issuer (
 input i_clk ;
 input i_rstn ;
 input cmd_t i_cmd ; 
-input [PROC_COUNT-1:0] i_busy ;
-input [PROC_COUNT-1:0] o_en_arr ;
+input i_ack ; 
+input [PROC_COUNT-1:0] i_busy ; 
+input [PROC_COUNT-1:0] i_finish; 
+
+input [PROC_COUNT-1:0] o_en_arr ; 
+
 output instr_t o_cmd ;
 // State machine 
 // setup simd array  
@@ -29,6 +34,9 @@ localparam SIMD_INFO = 3 ;
 localparam SIMD_WRITE = 4; 
 localparam WAIT_ACK = 5 ;
 // fetching and processing from queue and checking with scoreboard 
+localparam CMD_GET = 7 ; 
+localparam CMD_CHECK = 8 ; // check with scoreboard
+localparam CMD_WRITEBACK = 9 ; // writeback to cmd_queue if there's a dependency in scoreboard
 
 
 logic [3:0] state ; 
@@ -45,8 +53,24 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
         case (state)  
             IDLE: begin  
                 if (~|i_busy) begin  
-
+                    // pop last cmd from fifo
                 end
+            end
+            WAIT_ACK: begin 
+                if (i_ack) begin 
+                    state <= next_state; 
+                end
+            end
+
+            SIMD_SELECT: begin 
+                if (i_busy[selected_proc] == 0) begin 
+                    state <= SIMD_LD1 ; 
+                end
+                else 
+                    selected_proc <= selected_proc + 1 ;
+            end 
+            SIMD_LD1: begin  
+                state <= WAIT_ACK;  
             end
             default: 
                 state <= IDLE; 
@@ -66,6 +90,9 @@ always_latch begin
         end 
         SIMD_INFO : begin 
             next_state = SIMD_WRITE ; 
+        end
+        SIMD_WRITE : begin 
+            next_state = IDLE ; 
         end  
     endcase 
 end 

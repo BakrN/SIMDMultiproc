@@ -3,7 +3,10 @@
 // keeps track of cmds being executed 
 // COUNT should be a power of 2 
 `include "defines.svh"
-
+/*
+*   @brief scoreboard module
+*   @details This module implements an associative array (hashmap) with linear probing for collision resolution. 
+*/ 
 module scoreboard  (
     i_clk , 
     i_rstn, 
@@ -44,7 +47,7 @@ module scoreboard  (
             if (i_write) begin  
                 if (r_state == s_found ) begin // no overwrites (empty index)
                     map[r_idx] = i_entry;   
-                    r_state   <=  s_IDLE; 
+                    r_state   <=  s_IDLE;
                 end 
             end else if(i_flush) begin 
                 if (r_state ==s_found) begin 
@@ -72,8 +75,6 @@ module scoreboard  (
                 s_read: begin 
                     if (reinit ) begin 
                         r_probe_idx_original <= i_entry.cmd_id % PROC_COUNT; 
-                        
-                        
                         reinit <= 0 ; 
                         if (map[i_entry.cmd_id%PROC_COUNT].cmd_id == i_entry.cmd_id) begin 
                             r_state <= s_found; 
