@@ -109,7 +109,7 @@ module scoreboard  (
         end
 
     end
-
+    assign o_id = map[r_probe_idx].core_id ; 
     assign o_exists = (r_state==s_found)  ? 1 : 0 ; 
 
 endmodule ; 

@@ -1,7 +1,7 @@
 // vector memory
 
 
-module vector #(
+module fifo #(
   parameter WIDTH = 248,
   parameter DEPTH = 16 // needs to be power of 2 pref 
   )
