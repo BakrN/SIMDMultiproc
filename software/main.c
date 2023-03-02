@@ -12,7 +12,7 @@ int main(){
     matrix_print(&m);
 
     matrix_t ** m_decomp = (matrix_t **) matrix_2decompose(&m);
-    matrix_print(&m_decomp[0]); 
+    matrix_print(&m_decomp[2]); 
     // matrix_print(&m_decomp[1]); 
     // matrix_print(&m_decomp[2]); 
 
