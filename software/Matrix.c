@@ -47,7 +47,7 @@ matrix_t ** matrix_2decompose(matrix_t **matrix){
 
     int new_size = (*matrix)->x /2 ;
     matrix_t * m0 = matrix_create(new_size, new_size,&(*matrix)->data);
-    decomposed[0] = m0; 
+    decomposed[0] = m0;
     int * jump = &(*matrix)->data[new_size];
     matrix_t * m1 = matrix_create(new_size, new_size,&jump);
     decomposed[1] = m1; 

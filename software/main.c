@@ -25,6 +25,8 @@ int main(){
     matrix_print(&m_decomp2[0]); 
     matrix_print(&m_decomp2[1]); 
     matrix_print(&m_decomp2[2]);
+    matrix_print(&m_decomp2[3]); 
+    matrix_print(&m_decomp2[4]);
 
 
     // printf("%s", "## Product test ##\n");
