@@ -37,7 +37,7 @@ product_processor : main.c Matrix.c Product.c Vector.c
 .PHONY : clean clean-all run zip
 
 clean:
-	rm -rf *.o sensor_gateway sensor_node file_creator gateway.log *.zip LOGFIFO  *~
+	rm -rf *.o
 
 clean-all: clean
 	rm -rf lib/*.so
