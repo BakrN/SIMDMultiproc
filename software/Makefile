@@ -45,3 +45,9 @@ clean-all: clean
 run: product_processor
 	@echo "$(TITLE_COLOR)\n***** TEST RUN ACTIVE *****$(NO_COLOR)"
 	./product_processor
+
+gdb: product_processor
+	CK_FORK=no gdb ./product_processor
+
+valgrind: product_processor
+	valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./product_processor
