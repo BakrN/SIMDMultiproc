@@ -9,7 +9,7 @@ typedef struct packed{
 typedef logic[3:0] id_t; 
 
 // OPCODES: add , mul , ld  , set info , write , sub 
-typedef enum logic [2:0] {ADD, MUL, LD, SET_INFO, WRITE, SUB} opcode_t; 
+typedef enum logic [2:0] {INSTR_ADD, INSTR_MUL, INSTR_LD, INSTR_INFO, INSTR_WRITE, INSTR_SUB} opcode_t; 
 // Write: contains addr or index and size of data to overwrite
 // set info:  set size, and which to data to overwrite
 
