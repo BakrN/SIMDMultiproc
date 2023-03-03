@@ -46,8 +46,13 @@ module scoreboard  (
         end else begin 
             if (i_write) begin  
                 if (r_state == s_found ) begin // no overwrites (empty index)
-                    map[r_idx] = i_entry;   
-                    r_state   <=  s_IDLE;
+                    if (map[r_idx].cmd_id ==0 ) begin 
+                        map[r_idx] = i_entry;    
+                        r_state   <=  s_IDLE;
+                    end  else begin 
+
+                    end
+                    
                 end 
             end else if(i_flush) begin 
                 if (r_state ==s_found) begin 
@@ -71,6 +76,7 @@ module scoreboard  (
         else begin 
             case (r_state)  
                 s_get_free: begin 
+                    
                 end
                 s_read: begin 
                     if (reinit ) begin 
@@ -110,7 +116,7 @@ module scoreboard  (
         end
 
     end
-    assign o_id = map[r_probe_idx].core_id ; 
+    assign o_id = map[r_probe_idx].proc_id ; 
     assign o_exists = (r_state==s_found)  ? 1 : 0 ; 
 
 endmodule ; 

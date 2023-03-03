@@ -12,18 +12,25 @@ module issuer (
     i_finish, 
     i_busy, 
     o_en_arr , 
-    o_cmd, 
+    // fifo ports
+    o_read , 
+    o_write , 
+    o_cmd,
+    o_instr 
 ) ; 
 input i_clk ;
 input i_rstn ;
-input cmd_t i_cmd ; 
+
 input i_ack ; 
 input [PROC_COUNT-1:0] i_busy ; 
 input [PROC_COUNT-1:0] i_finish; 
-
 input [PROC_COUNT-1:0] o_en_arr ; 
-
-output instr_t o_cmd ;
+output instr_t o_instr;
+// fifo ports 
+input cmd_t i_cmd ; 
+output logic o_read ;
+output logic o_write ;
+output cmd_t o_cmd ;
 // State machine 
 // setup simd array  
 localparam IDLE = 0 ;
@@ -54,7 +61,22 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             IDLE: begin  
                 if (~|i_busy) begin  
                     // pop last cmd from fifo
+                    r_state <=  CMD_GET; 
                 end
+            end
+            CMD_GET: begin 
+                r_state <= CMD_CHECK;
+            end
+            CMD_CHECK: begin 
+                if (1) begin 
+                    r_state <= SIMD_SELECT; 
+                end
+                else begin 
+                    r_state <= CMD_WRITEBACK;
+                end
+            end
+            CMD_WRITEBACK: begin 
+                r_state <= IDLE; 
             end
             WAIT_ACK: begin 
                 if (i_ack) begin 
@@ -96,5 +118,22 @@ always_latch begin
         end  
     endcase 
 end 
-
+/* --------------------- Scoreboard module instantiation -------------------- */
+// scoreboard ports 
+entry_t board_entry;
+logic   board_write; 
+logic   board_flush;
+logic   board_read;
+logic   board_value ; 
+logic   board_exists ;
+scoreboard  u_scoreboard (
+    .i_clk                      ( i_clk                       ),
+    .i_rstn                     ( i_rstn                      ),
+    .i_entry                    ( board_entry             ), 
+    .i_write                    ( board_write                     ),
+    .i_flush                    ( board_flush                     ),
+    .i_read                     ( board_read                      ),
+    .o_id                       ( board_value),
+    .o_exists                   ( board_exists                    )
+); 
 endmodule 

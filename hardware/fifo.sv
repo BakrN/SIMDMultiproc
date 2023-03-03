@@ -6,8 +6,8 @@ module fifo #(
   parameter DEPTH = 16 // needs to be power of 2 pref 
   )
   (
-   clk,
-   rstn,
+   i_clk,
+   i_rstn,
    i_read,
    i_write,
    i_data,
@@ -16,8 +16,8 @@ module fifo #(
    o_fifo_empty
   );
   
-  input                      clk; 
-  input                      rstn; 
+  input                      i_clk; 
+  input                      i_rstn; 
   input                      i_read; 
   input                      i_write; 
   input   [WIDTH-1:0] i_data; 
@@ -32,8 +32,8 @@ module fifo #(
   logic [$clog2(DEPTH)-1:0] readAddr = readPtr[$clog2(DEPTH)-1:0];  
   logic [$clog2(DEPTH)-1:0] count; 
 
-  always_ff@(posedge clk or negedge rstn)begin
-    if(~rstn)begin
+  always_ff@(posedge i_clk or negedge i_rstn)begin
+    if(~i_rstn)begin
       readPtr     <= '0;
       writePtr    <= '0;
     end

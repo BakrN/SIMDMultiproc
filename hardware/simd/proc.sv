@@ -1,7 +1,7 @@
 `include "array.v" 
 `include "../defines.svh" 
 
-module core(
+module proc(
     i_clk    , 
     i_rstn   , 
     i_en     ,
