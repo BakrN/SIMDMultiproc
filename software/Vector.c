@@ -36,6 +36,11 @@ int * vector_getData(vector_t **vector){
     return (*vector)->data;
 }
 
+uint16_t * vector_getLength(vector_t **vector){
+    return (*vector)->length;
+}
+
+
 vector_t ** vector_2decompose(vector_t **vector){
     vector_t ** decomposed = malloc(2*sizeof(vector_t *)); //array of ptrs to the decomposed matrices
 
