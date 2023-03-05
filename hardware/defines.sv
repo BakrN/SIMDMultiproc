@@ -1,13 +1,14 @@
+`define PROC_COUNT  4
+`define ID_WIDTH  4 
 
-parameter PROC_COUNT = 4 ; 
-parameter ID_WIDTH =   4; 
 
-typedef struct packed{  
-        logic [ID_WIDTH-1:0] cmd_id; 
-        logic [$clog2(PROC_COUNT)-1:0] proc_id ; 
-} entry_t ; 
+
 typedef logic[3:0] id_t; 
-
+// Entries for scoreboard
+typedef struct packed{   
+        logic [`ID_WIDTH-1:0]           cmd_id; 
+        logic [$clog2(`PROC_COUNT)-1:0] proc_id ;  
+} entry_t ; 
 // OPCODES: add , mul , ld  , set info , write , sub 
 typedef enum logic [2:0] {INSTR_ADD, INSTR_MUL, INSTR_LD, INSTR_INFO, INSTR_WRITE, INSTR_SUB} opcode_t; 
 // Write: contains addr or index and size of data to overwrite

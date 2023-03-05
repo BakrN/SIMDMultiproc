@@ -3,7 +3,7 @@
 // contains scoreboard 
 // Has fsm send cmd // wait for ack 
 `include "scoreboard.sv"
-`include "defines.svh"
+`include "defines.sv"
 module issuer ( 
     i_clk, 
     i_rstn, 
@@ -22,15 +22,15 @@ input i_clk ;
 input i_rstn ;
 
 input i_ack ; 
-input [PROC_COUNT-1:0] i_busy ; 
-input [PROC_COUNT-1:0] i_finish; 
-input [PROC_COUNT-1:0] o_en_arr ; 
+input [`PROC_COUNT-1:0] i_busy ; 
+input [`PROC_COUNT-1:0] i_finish; 
+input [`PROC_COUNT-1:0] o_en_arr ; 
 output instr_t o_instr;
 // fifo ports 
 input cmd_t i_cmd ; 
 output logic o_read ;
 output logic o_write ;
-output cmd_t o_cmd ;
+output cmd_t o_cmd ; // fifo 
 // State machine 
 // setup simd array  
 localparam IDLE = 0 ;
@@ -48,7 +48,7 @@ localparam CMD_WRITEBACK = 9 ; // writeback to cmd_queue if there's a dependency
 
 logic [3:0] state ; 
 logic [3:0] next_state ; 
-logic [$clog2(PROC_COUNT)-1:0] selected_proc;
+logic [$clog2(`PROC_COUNT)-1:0] selected_proc;
 cmd_t next_cmd ;  // next command to execute
 
 // Current state update logic 
@@ -136,4 +136,5 @@ scoreboard  u_scoreboard (
     .o_id                       ( board_value),
     .o_exists                   ( board_exists                    )
 ); 
+
 endmodule 
