@@ -6,7 +6,7 @@
 
 
 struct product_node {
-    product_node_t *parent, *p0, *p1, *p2;
+    product_node_t *parent, *p0, *p1, *p2, *p3, *p4, *p5;
     matrix_t *m;
     vector_t *v;
 };
@@ -35,7 +35,25 @@ product_t* product_set_head(product_t **product, product_node_t **pn){
 }
 
 void product_decompose(product_node_t **pn){
-    
+    uint16_t length = *vector_getLength(&(*pn)->v);
+    if(length % 2 == 0){
+        matrix_t ** m_decomp = matrix_2decompose(&(*pn)->m);
+        vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
+        //Command 1 = m_decomp[0] + m_decomp[1]
+        //Command 2 = m_decomp[1] + m_decomp[2]
+        //Command 3 = v_decomp[0] + v_decomp[1]
+
+        //Command 4 = C1 . v_decomp[1]
+        //Command 5 = m_decomp[1] . C3
+        //Command 6 = C2 . v_decomp[0]
+
+        return;
+    }
+    if(length % 3 == 0){
+        matrix_t ** m_decomp = matrix_3decompose(&(*pn)->m);
+        vector_t ** v_decomp = vector_3decompose(&(*pn)->v);
+        return;
+    }
 }
 
 

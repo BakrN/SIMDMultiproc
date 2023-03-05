@@ -15,6 +15,8 @@ vector_t* vector_padEnd(vector_t **vector, int amount);
 
 int * vector_getData(vector_t **vector);
 
+uint16_t * vector_getLength(vector_t **vector);
+
 vector_t ** vector_2decompose(vector_t **vector);
 
 vector_t ** vector_3decompose(vector_t **vector);
