@@ -39,6 +39,7 @@ module scoreboard  (
     output o_exists; 
     output o_ack ; 
     entry_t map [`PROC_COUNT-1:0]  ;   
+    logic [`PROC_COUNT-1:0] valid_table ;  // table containing valid entries 
     entry_t current_entry ;//,base_entry;
 
     assign current_entry = map[probe_idx] ;
@@ -59,9 +60,7 @@ module scoreboard  (
         if (!i_rstn ) begin 
             state <= IDLE ; 
             found = 0 ; 
-            for (integer i= 0 ; i < `PROC_COUNT; i++ ) begin 
-                map[i] = 0 ; 
-            end 
+            valid_table = 0 ; 
         end 
         else begin 
             case(state) 
@@ -75,32 +74,32 @@ module scoreboard  (
                         found <= 0 ; 
                         state <= OUT; 
                     end
+                    if (!valid_table[probe_idx]) begin 
+                        found <=  0  ;  
+                        state <= OUT ;  
+                        flush <= 0 ;
+                    end
                     // if found 
                     else if (current_entry.cmd_id == i_entry.cmd_id) begin 
                         if (flush) begin 
-                            map[probe_idx] = 0 ; 
+                            valid_table[probe_idx] = 0 ; 
                         end 
                         found <= 1; 
                         state <= OUT ;  
                     end
                     // IF occupied move forward 
-                    else if (current_entry.cmd_id != 0 ) begin 
+                    else begin 
                         probe_idx <= probe_idx + 1 ; 
                         reinit <= 0 ;
                     end  
-                    // if 0 then it is not found  
-                    else begin 
-                        found <=  0  ;  
-                        state <= OUT ;  
-                        flush <= 0 ;
-                    end
 
                 end 
                 WRITE: begin // Behaviour assumes you have at least 1 garunteed slot  otherwise it will be stuck in this state
-                    if (current_entry.cmd_id == 0 )  begin  
+                    if (!valid_table[probe_idx])  begin  
                     // found free entry now write
                         map[probe_idx] <= i_entry; 
                         state <= OUT ;
+                        valid_table[probe_idx] = 1; 
                     end  else  
                         probe_idx <= probe_idx + 1 ; 
                 end
@@ -113,9 +112,11 @@ module scoreboard  (
         end
     end
     // on change of state 
-    always @(state) begin  
-        probe_idx = base_index; 
-        reinit <= 1;   
+    always @(next_state) begin   
+        if (next_state!=IDLE) begin 
+            probe_idx = base_index;  
+            reinit <= 1;   
+        end
     end
     always @(posedge i_flush) begin  
         flush <= 1 ; 

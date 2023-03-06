@@ -1,21 +1,24 @@
 `include "scoreboard.sv"
 `define QUOTE(q) `"q`"
 int TEST_NO = 0 ; 
-function void assert_equals(input logic signal1, input logic signal2, input string message);
-  
-  if (signal1 !== signal2) begin
-    $error("Assertion failed: Signal1:%d , signal2: %d , ", signal1, signal2, message);  
-  end else begin 
+
+`define assert_equals(signal1, signal2, message) \
+  if (signal1 !== signal2) begin \
+    $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
+  end else begin \
+    $display("signal1: %d and signal2: %d were equal", signal1, signal2); \
   end
-endfunction
+
+  
 
 `define dump_scoreboard(inst) \
   begin \ 
   entry_t t;\
   $display("dumping scoreboard contents");      \
+  $display("Key   Value   Valid") ; \
   for (integer i = 0 ; i < `PROC_COUNT; i ++) begin \
   t= inst.map[i]; \
-  $display("At index %d Key: %d, Value: %d", i , t.cmd_id, t.proc_id) ;  \ 
+  $display("%d      %d       %b", t.cmd_id, t.proc_id, inst.valid_table[i]) ;  \ 
   end \
   end
 
@@ -67,6 +70,7 @@ initial begin
         t.proc_id = i+1 ; 
         u_scoreboard.map[i] =  t ; 
     end 
+    u_scoreboard.valid_table = 4'hF; 
 end
 // Dumping out waveform 
 initial begin 
@@ -81,25 +85,72 @@ initial begin
     `dump_scoreboard(u_scoreboard)  
     /* ------------------------------- Test Reads ------------------------------- */ 
     // test read entries
-    for (integer i = 0 ; i < `PROC_COUNT; i++) begin 
+    for (integer i = 0 ; i < `PROC_COUNT; i=i+1) begin 
       i_entry.cmd_id = i ;  
       i_read = 1;
-      #T 
+      #T ;
+      // should read 2  
+      while (!o_ack)  begin  
+        #(T/2);  
+      end 
+
+      `assert_equals(o_id , (i_entry.cmd_id + 1) % `PROC_COUNT, "Incorrect value for key")  ; 
+      `assert_equals(o_exists, 1, "Key ddoesn't exist.")  ; 
+      i_rstn = 0 ; 
       i_read = 0 ; 
-      // should read 2 
-      #(20*T) ; 
-      $finish ; 
-      //while (!o_ack)  begin  
-      //  #T; 
-      //end 
-      assert_equals(o_id , i+1, "Incorrect valid (ID) for key ") ; 
-      assert_equals(o_exists, 1, "Couldn't find key") ;   
-    end
+      #(2*T) ;   
+      i_rstn =1 ; 
+      u_scoreboard.valid_table = 4'hF; // revalidate entries 
+    end 
+    u_scoreboard.valid_table = 4'd0 ;  // flush
     /* ----------------------------- Testing Writes ----------------------------- */
+    // Write keys 4 
+    i_entry.cmd_id = 4; 
+    i_entry.proc_id = 1; 
     
+    i_write = 1 ;
+    #T ; 
+    i_write = 0 ; 
+    while (!o_ack)begin 
+      #(T/2) ;
+    end 
+    #T ; 
+    // write 6 
+    i_entry.cmd_id = 6; 
+    i_entry.proc_id = 2; 
+    i_write = 1 ;
+    #T ; 
+    i_write = 0 ; 
+    while (!o_ack)begin 
+      #(T/2) ;
+    end 
+    #T ; 
+    // write 8 
+    i_entry.cmd_id = 8; 
+    i_entry.proc_id = 3; 
+    i_write = 1 ;
+    #T ; 
+    i_write = 0 ; 
+    while (!o_ack)begin 
+      #(T/2) ;
+    end 
+    #(2*T) ; 
+
     /* ----------------------- Testing reads after writes ----------------------- */
+    i_entry.cmd_id = 8 ; 
+    `dump_scoreboard(u_scoreboard) 
+    // test read 8 
+    i_read = 1; 
+    #T ; 
+    i_read = 0 ; 
+    while (!o_ack) begin 
+      #(T/2); 
+    end
+    `assert_equals(o_id , 3 , "test") ; 
+    `assert_equals(o_exists,1 , "test") ; 
 
     /* ------------------------------ Testing flush ----------------------------- */
+
 
     /* ----------------------------- Testing Writes ----------------------------- */
   
