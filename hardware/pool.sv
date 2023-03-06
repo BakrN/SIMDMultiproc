@@ -24,7 +24,7 @@ output [`PROC_COUNT-1:0] o_req     ;
 output [`PROC_COUNT-1:0] o_finish  ;
 output [`PROC_COUNT-1:0] o_busy    ; 
 output [`PROC_COUNT-1:0] o_ack     ; 
-output id_t o_id [`PROC_COUNT-1:0] ;
+output cmd_id_t o_id [`PROC_COUNT-1:0] ;
 genvar i ; 
 generate
  for (i = 0 ; i < `PROC_COUNT ; i = i + 1)  begin 

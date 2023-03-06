@@ -1,0 +1,7 @@
+TODO: 
+    - Finish up memory system. 
+    - Once memory system is verified, finish the processor FSM 
+    - Complete the issuer (also finalize cmd_t format)
+    - Thorough verification of individual components 
+    - Combine modules and verify entire system(write a python script to multiple matrix multiplications)
+    

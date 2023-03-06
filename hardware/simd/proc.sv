@@ -22,6 +22,8 @@ module proc(
     i_grant_wr  , 
     i_valid  ,
     i_instr , 
+    i_data , 
+    o_addr  , 
     o_finish , 
     o_req_rd, 
     o_req_wr, 
@@ -34,14 +36,12 @@ module proc(
     localparam IDLE      = 4'd0;  
     localparam LD1       = 4'd1; 
     localparam LD2       = 4'd2;  
-    localparam SET_COUNT = 4'd3;  // Here set size of operation and contains id of process you're running
-    localparam SET_WRITE = 4'd4;  // Setup overwrite address  
-    localparam SET_INSTR = 4'd5;  // Setup instruction
+    localparam SET_INFO  = 4'd3 ;
     // FSM process           
-    localparam FETCH1    = 4'd7;  
-    localparam FETCH2    = 4'd8;  
-    localparam WRITE     = 4'd9;  
-    localparam FINISHED  = 4'd10;  
+    localparam FETCH1    = 4'd4;  
+    localparam FETCH2    = 4'd5;  
+    localparam WRITE     = 4'd6;  
+    localparam FINISHED  = 4'd7;  
 /* -------------------------------- IO Ports -------------------------------- */
     input  instr_t i_instr; 
     input i_clk ; 
@@ -50,12 +50,14 @@ module proc(
     input i_grant_rd ; 
     input i_grant_wr ; 
     input i_valid ; // also used for ack in finished stage 
-    output id_t o_id ; 
+    output cmd_id_t o_id ; 
     output o_finish; 
     output logic o_req_rd; 
     output logic o_req_wr; 
     output o_busy; 
     output logic o_ack ; 
+    output addr_t o_addr ; // for accessing shared mem  
+    input logic [127:0] i_data  ; // data read from shared mem
     output logic [127:0]  o_data; 
 
 
@@ -63,16 +65,17 @@ module proc(
 // array logci
 logic [3:0] state ;   
 addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1   ;  
-id_t r_id ;  
-logic [1:0] simd_opcode; // 0 for add , 1 mul , 2 sub
-// SIMD regs 
-logic [127:0] reg0 , reg1 ;  
-
-/* -------------------------- Modules Instantiation ------------------------- */
+cmd_id_t r_id ;  
+logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
+// SIMD regs  
+logic [127:0] reg0 , reg1 , reg0_data , reg1_data ;  
+// INFO storage  
+instr_info_t instr_info ; 
+/* -------------------------- Modules Instantiation ------------------------- */ 
 simd_arr u_simd_arr (
     .i_in1                   ( reg0    ),
     .i_in2                   ( reg1 ),
-    .opcode                  ( simd_opcode ),
+    .opcode                  ( instr_info.op  ),
     .o_res                   ( o_data ) 
 );
 
@@ -98,7 +101,7 @@ end
             LD1: begin 
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= LD2 ;   
-                    addr_0 <= i_instr.info ;  
+                    addr_0 <= i_instr.payload ;  
                     o_ack <= 1; 
                 end
                 else  begin 
@@ -107,8 +110,8 @@ end
             end 
             LD2: begin 
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
-                    state <= SET_COUNT;   
-                    addr_1 <= i_instr.info ;  
+                    state <= SET_INFO;   
+                    addr_1 <= i_instr.payload ;  
                     o_ack <= 1 ; 
                 end
                 else begin 
@@ -116,40 +119,60 @@ end
                     state <= LD2;
                 end
             end
-            SET_COUNT: begin 
-                if (i_instr.opcode == INSTR_INFO && i_valid) begin 
-                    state <= FETCH1;   
-                    // count <= i_instr.info; 
-                    o_ack <= 1 ; 
+            SET_INFO: begin 
+                if (i_instr.opcode == INSTR_INFO && i_valid) begin  
+                    state <= FETCH1;    
+                    instr_info <= i_instr.payload; 
+                    o_ack <= 1 ;  
                 end
                 else begin 
                     o_ack <= 0 ; 
-                    state <= SET_COUNT;
+                    state <= SET_INFO;
                 end
-            end
-           
+            end 
             // FSM Process 
             FETCH1: begin 
                 if(i_grant_rd) begin 
                     if (1) begin  // if done read 
-                        reg0 <= 0 ;  // load from mem
+                        if (instr_info.overwrite ) begin // if overwriting addr_1 
+                                // add or sub so pad zeros
+                                // mul so pad with 1s
+                            reg0 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| mul_mask ;  // if it's not a mul then pad with 0s. Otherwise pad with 1s
+ 
+                        end else begin 
+                            reg0 <= i_data ; 
+                        end 
+                        
                         state <= FETCH2 ;  
                     end
                 end
             end
             FETCH2: begin 
-                    reg1 <= 0 ;  
+                    if (1) begin  // if done read 
+                        if (!instr_info.overwrite ) begin // if overwriting addr_0
+                            reg1 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| mul_mask ;  // if it's not a mul then pad with 0s. Otherwise pad with 1s  
+ 
+                        end else begin 
+                            reg1 <= i_data ; 
+                        end 
+                        
+                        state <= WRITE;  
+                    end
                     // when movin on set  req to 0 
             end
-           
+            
             WRITE: begin 
                 // if req granted 
                 if (i_grant_wr)   begin 
                     if (1)begin  // if done write
-                        if(1) begin  // if not done with command
-                            state <= FETCH1; 
-                        end else 
-                            state <= FINISHED ; 
+                        addr_0 <= next_addr_0; // update addresses 
+                        addr_1 <= next_addr_1; 
+                        if(instr_info.count <= 4) begin  // if done with command
+                            state <= FINISHED ;  
+                        end else  
+                            // update count 
+                            instr_info.count <= instr_info - 4 ; // - SIMD WIDTH 
+                            state <= FETCH1;  
                     end
                 end
             end
@@ -164,9 +187,19 @@ end
         end
     end
 
+    logic [95:0] unselect_mask;  
+    assign unselect_mask[95:64] = (instr_info.count <2) ?0 : 32'hFFFF;  
+    assign unselect_mask[63:32] = (instr_info.count <3) ?0 : 32'hFFFF;  
+    assign unselect_mask[31:0]  = (instr_info.count <4) ?0 : 32'hFFFF; 
+    logic [95:0] mul_mask ; 
+    assign mul_mask[95:64] = (instr_info.count <2) ?0 : 32'h0001;  
+    assign mul_mask[63:32] = (instr_info.count <3) ?0 : 32'h0001;   
+    assign mul_mask[31:0]  = (instr_info.count <4) ?0 : 32'h0001;  
+
+    assign o_addr   =  (state==FETCH2) ? addr_1 : addr_0 ; 
     assign o_req_rd =  ((state==FETCH1)|| (state==FETCH2) ) ? 1 : 0 ;  
     assign o_req_wr =  (state==WRITE) ? 1 : 0 ; 
-    assign o_busy   =  (state==IDLE) ? 0 : 1 ;
+    assign o_busy   =  (state==IDLE) ? 0 : 1 ;  
     assign o_finish =  (state==FINISHED) ? 1 : 0 ; 
     
 

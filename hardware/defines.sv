@@ -1,30 +1,45 @@
 `define PROC_COUNT  4
-`define ID_WIDTH  4 
+`define UNIT_SIZE   4 // int32
 
 
+typedef logic[23:0] addr_t ;// shaerd mem address  
+typedef logic[3:0] cmd_id_t; 
 
-typedef logic[3:0] id_t; 
-// Entries for scoreboard
 typedef struct packed{   
-        logic [`ID_WIDTH-1:0]           cmd_id; 
+        cmd_id_t         cmd_id; 
         logic [$clog2(`PROC_COUNT)-1:0] proc_id ;  
-} entry_t ; 
+} entry_t ; // Entries for scoreboard
+
 // OPCODES: add , mul , ld  , set info , write , sub 
-typedef enum logic [2:0] {INSTR_ADD, INSTR_MUL, INSTR_LD, INSTR_INFO, INSTR_WRITE, INSTR_SUB} opcode_t; 
+typedef enum logic {INSTR_LD, INSTR_INFO} opcode_t; 
 // Write: contains addr or index and size of data to overwrite
 // set info:  set size, and which to data to overwrite
+typedef struct packed { 
+        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;  // How many elements 
+        logic [1:0] op ; // operation . 0 for add , 1 for sub , 2 for mul 
+        logic overwrite ; // 0: overwrite addr_0 , 1: overwrite addr_1 ;
+} instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
 typedef struct packed{ 
         logic [3:0] id ;
         opcode_t  opcode ; 
-        logic [24:0] info;  
-}instr_t;   // change this later name to instr_t
+        instr_info_t payload;  // For instr info: 19 is for size , op (add mul or sun), which to overwrite
+}instr_t;   // Instruction run on each proc
+ 
+
 
 typedef struct packed{ 
-        logic[63:0] data; 
+        cmd_id_t id ; // cmd id 
+        cmd_id_t dep; // dependency id
+        addr_t addr_0;    
+        addr_t addr_1;
+        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] size;// size of operation (how many elements) 
+        logic [1:0]  op ; // add mul sub    
+        logic wr_addr ;  // result writeback_addr. 0 for addr_0 , 1 for addr_1 
+
 } cmd_t; // commands enqueued by controller   
 
-typedef logic[23:0] addr_t ;// shaerd mem address 
+
 
 
 
