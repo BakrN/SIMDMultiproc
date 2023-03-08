@@ -1,5 +1,7 @@
 .vscode/* 
 
+product_processor
+
 *.o
 *.d
 *.so
