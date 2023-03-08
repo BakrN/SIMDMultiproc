@@ -1,19 +1,45 @@
 #include "Command.h"
-#include <stdbool.h>
 #include <stdlib.h>
 
+int id_count;
 
 struct command{
-    bool flag; //0 is addition, 1 is Multiply
-    void ** elements;
+    uint8_t opcode; //0 addition, 1 subract, 2 multiply
+    int id;
+    command_t ** parent;
+    int * elements;
 };
 
-void command_create(command_t ** c,bool flag, void ** e0, void ** e1, void ** e2){
-    (*c)->flag = flag;
-    if(e2 != NULL){ 
+void command_create(command_t ** c, uint8_t opcode, command_t ** parent, int e0, int e1, int e2){
+    (*c)->opcode = opcode;
+    id_count ++;
+    (*c)->id = id_count;
+    (*c)->parent = parent;
+    if(e2 != -1){ 
         (*c)->elements = malloc(sizeof(void *)*3);
         (*c)->elements[0] = e0;
         (*c)->elements[1] = e1;
         (*c)->elements[2] = e2;
+    }else {
+        (*c)->elements = malloc(sizeof(void *)*2);
+        (*c)->elements[0] = e0;
+        (*c)->elements[1] = e1;
     }
 }
+
+int command_getId(command_t ** command){
+    return (*command)->id;
+}
+
+uint8_t command_getOpcode(command_t ** command){
+    return (*command)->opcode;
+}
+
+command_t ** command_getParent(command_t ** command){
+    return (*command)->parent;
+}
+
+int * command_getStarts(command_t ** command){
+    return (*command)->elements;
+}
+
