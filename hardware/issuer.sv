@@ -18,7 +18,6 @@ module issuer (
     o_cmd,
     // Proc ports
     i_finish, 
-    i_finishd_id    ,  
     i_busy  , 
     o_en_arr, // enable or validate instr to proc
     o_ack , 
@@ -28,7 +27,6 @@ input i_clk ;
 input i_rstn ;
 
 input i_ack ; 
-input cmd_id_t i_finish_id [`PROC_COUNT-1:0] ; 
 input [`PROC_COUNT-1:0] i_busy ; 
 input [`PROC_COUNT-1:0] i_finish; 
 input [`PROC_COUNT-1:0] o_en_arr ; 
@@ -117,10 +115,10 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end
             end
             CMD_WRITEBACK: begin 
-                state <= IDLE; 
+                state <= WAIT_ACK; 
             end
             WAIT_ACK: begin 
-                if (i_ack) begin 
+                if (i_ack) begin  
                     state <= next_state; 
                 end
             end
@@ -153,7 +151,13 @@ always_latch begin
         end 
         SIMD_INFO : begin 
             next_state = IDLE; 
-        end 
+        end  
+        CMD_WRITEBACK: begin 
+            next_state = IDLE; 
+        end
+        
+        
+        
     endcase 
 end  
 /* ---------------------------- Priority find_first_set_bit for finished signals ---------------------------- */

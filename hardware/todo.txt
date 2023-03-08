@@ -4,4 +4,5 @@ TODO:
     - Complete the issuer (also finalize cmd_t format)
     - Thorough verification of individual components 
     - Combine modules and verify entire system(write a python script to multiple matrix multiplications)
-    
+Notes: 
+    - When proc finishes it could be a multicycle thing to go through scoreboard 

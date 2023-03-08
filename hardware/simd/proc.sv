@@ -68,8 +68,8 @@ addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1   ;
 cmd_id_t r_id ;  
 logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
-logic [127:0] reg0 , reg1 , reg0_data , reg1_data ;  
-// INFO storage  
+logic [127:0] reg0 , reg1 ; 
+// INFO storage   
 instr_info_t instr_info ; 
 /* -------------------------- Modules Instantiation ------------------------- */ 
 simd_arr u_simd_arr (
@@ -137,7 +137,7 @@ end
                         if (instr_info.overwrite ) begin // if overwriting addr_1 
                                 // add or sub so pad zeros
                                 // mul so pad with 1s
-                            reg0 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| mul_mask ;  // if it's not a mul then pad with 0s. Otherwise pad with 1s
+                            reg0 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| {32'd0, mul_mask} ;  // if it's not a mul then pad with 0s. Otherwise pad with 1s
  
                         end else begin 
                             reg0 <= i_data ; 
@@ -150,7 +150,7 @@ end
             FETCH2: begin 
                     if (1) begin  // if done read 
                         if (!instr_info.overwrite ) begin // if overwriting addr_0
-                            reg1 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| mul_mask ;  // if it's not a mul then pad with 0s. Otherwise pad with 1s  
+                            reg1 <= (!instr_info.op[1])? i_data & {32'hFFFF, unselect_mask} : (i_data  & {32'hFFFF, unselect_mask})| {32'd0 ,mul_mask};  // if it's not a mul then pad with 0s. Otherwise pad with 1s  
  
                         end else begin 
                             reg1 <= i_data ; 
@@ -164,21 +164,23 @@ end
             WRITE: begin 
                 // if req granted 
                 if (i_grant_wr)   begin 
-                    if (1)begin  // if done write
+                    //if (1)begin  // if done write
                         addr_0 <= next_addr_0; // update addresses 
                         addr_1 <= next_addr_1; 
                         if(instr_info.count <= 4) begin  // if done with command
                             state <= FINISHED ;  
-                        end else  
+                        end else  begin 
                             // update count 
                             instr_info.count <= instr_info - 4 ; // - SIMD WIDTH 
                             state <= FETCH1;  
-                    end
+                        end
+                    //end 
                 end
             end
             FINISHED: begin 
                  // stall here 
                  // wait until I recieve aknowledgement from issuer that scoreboard was flushed 
+                 
             end
             default: 
                 state <= IDLE ;
