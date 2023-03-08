@@ -41,14 +41,19 @@ void product_decompose(product_node_t **pn){
         matrix_t ** m_decomp = matrix_2decompose(&(*pn)->m);
         vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
         command_t * c1;
-        command_create(&c1, 0, NULL, matrix_getDataStart(&m_decomp[0]), matrix_getDataStart(&m_decomp[1]),-1);
+        command_create(&c1, 0, NULL, matrix_getDataStart(&m_decomp[0]), matrix_getDataStart(&m_decomp[1]),-1, matrix_getDataStart(&m_decomp[0]), length/2);
         command_t * c2;
-        command_create(&c2, 0, NULL, matrix_getDataStart(&m_decomp[1]), matrix_getDataStart(&m_decomp[2]),-1);
+        command_create(&c2, 0, NULL, matrix_getDataStart(&m_decomp[1]), matrix_getDataStart(&m_decomp[2]),-1, matrix_getDataStart(&m_decomp[2]), length/2);
         command_t * c3;
-        command_create(&c3, 0, NULL, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1);
+        command_create(&c3, 0, NULL, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,-1,length/2);
         //Command 1 = m_decomp[0] + m_decomp[1]
         //Command 2 = m_decomp[1] + m_decomp[2]
         //Command 3 = v_decomp[0] + v_decomp[1]
+
+        command_send(&c1);
+        command_send(&c2);
+        command_send(&c3);
+
 
         //Command 4 = C1 . v_decomp[1] -> create new product
         //Command 5 = m_decomp[1] . C3

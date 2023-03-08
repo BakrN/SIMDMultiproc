@@ -1,4 +1,5 @@
 #include "Command.h"
+#include "Solver.h"
 #include <stdlib.h>
 
 int id_count;
@@ -8,10 +9,14 @@ struct command{
     int id;
     command_t ** parent;
     int * elements;
+    int store;
+    uint16_t storeSize;
 };
 
-void command_create(command_t ** c, uint8_t opcode, command_t ** parent, int e0, int e1, int e2){
+void command_create(command_t ** c, uint8_t opcode, command_t ** parent, int e0, int e1, int e2, int store, uint16_t storeSize){
+    (*c)->store = store;
     (*c)->opcode = opcode;
+    (*c)->storeSize = storeSize;
     id_count ++;
     (*c)->id = id_count;
     (*c)->parent = parent;
@@ -25,6 +30,11 @@ void command_create(command_t ** c, uint8_t opcode, command_t ** parent, int e0,
         (*c)->elements[0] = e0;
         (*c)->elements[1] = e1;
     }
+    command_send(c);
+}
+
+void command_send(command_t ** command){
+    solver_receive(command);
 }
 
 int command_getId(command_t ** command){
@@ -43,3 +53,10 @@ int * command_getStarts(command_t ** command){
     return (*command)->elements;
 }
 
+int command_getStore(command_t ** command){
+    return (*command)->store;
+}
+
+uint16_t command_getStoreSize(command_t ** command){
+    return (*command)->storeSize;
+}
