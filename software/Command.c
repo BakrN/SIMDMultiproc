@@ -31,3 +31,15 @@ int command_getId(command_t ** command){
     return (*command)->id;
 }
 
+uint8_t command_getOpcode(command_t ** command){
+    return (*command)->opcode;
+}
+
+command_t ** command_getParent(command_t ** command){
+    return (*command)->parent;
+}
+
+int * command_getStarts(command_t ** command){
+    return (*command)->elements;
+}
+

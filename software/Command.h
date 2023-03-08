@@ -12,5 +12,12 @@ void command_send(command_t ** command);
 
 int command_getId(command_t ** command);
 
+uint8_t command_getOpcode(command_t ** command);
+
+command_t ** command_getParent(command_t ** command);
+
+int * command_getStarts(command_t ** command);
+
+
 
 #endif //_COMMAND_H_

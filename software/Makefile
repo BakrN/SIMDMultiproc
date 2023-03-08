@@ -6,17 +6,18 @@ all: product_processor
 
 # When trying to compile one of the executables, first look for its .c files
 # Then check if the libraries are in the lib folder
-product_processor : main.c Matrix.c Product.c Vector.c Command.c
+product_processor : main.c Matrix.c Product.c Vector.c Command.c Solver.c
 	@echo "$(TITLE_COLOR)\n***** CPPCHECK *****$(NO_COLOR)"
-	cppcheck --enable=all --check-config --suppress=missingIncludeSystem main.c matrix.c product.c vector.c
+	cppcheck --enable=all --check-config --suppress=missingIncludeSystem main.c matrix.c product.c vector.c command.c solver.c
 	@echo "$(TITLE_COLOR)\n***** COMPILING product_processor *****$(NO_COLOR)"
 	gcc -c main.c      -Wall -std=c11 -Werror -o main.o      -fdiagnostics-color=auto -g
 	gcc -c Matrix.c   -Wall -std=c11 -Werror -o matrix.o   -fdiagnostics-color=auto -g
 	gcc -c Product.c   -Wall -std=c11 -Werror -o product.o   -fdiagnostics-color=auto -g
 	gcc -c Vector.c -Wall -std=c11 -Werror -o vector.o -fdiagnostics-color=auto -g
 	gcc -c Command.c -Wall -std=c11 -Werror -o command.o -fdiagnostics-color=auto -g
+	gcc -c Solver.c -Wall -std=c11 -Werror -o solver.o -fdiagnostics-color=auto -g
 	@echo "$(TITLE_COLOR)\n***** LINKING *****$(NO_COLOR)"
-	gcc main.o matrix.o product.o vector.o command.o -o product_processor -Wall -L./lib -Wl,-rpath=./lib -lsqlite3 -fdiagnostics-color=auto -g
+	gcc main.o matrix.o product.o vector.o command.o solver.o -o product_processor -Wall -L./lib -Wl,-rpath=./lib -lsqlite3 -fdiagnostics-color=auto -g
 
 # # If you only want to compile one of the libs, this target will match (e.g. make liblist)
 # libdplist : lib/libdplist.so
