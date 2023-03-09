@@ -45,7 +45,7 @@ void product_decompose(product_node_t **pn){
         command_t * c2;
         command_create(&c2, 0, NULL, matrix_getDataStart(&m_decomp[1]), matrix_getDataStart(&m_decomp[2]),-1, matrix_getDataStart(&m_decomp[2]), length/2);
         command_t * c3;
-        command_create(&c3, 0, NULL, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,-1,length/2);
+        command_create(&c3, 0, NULL, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,-2,length/2);
         //Command 1 = m_decomp[0] + m_decomp[1]
         //Command 2 = m_decomp[1] + m_decomp[2]
         //Command 3 = v_decomp[0] + v_decomp[1]

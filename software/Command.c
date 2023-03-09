@@ -9,7 +9,7 @@ struct command{
     int id;
     command_t ** parent;
     int * elements;
-    int store;
+    int store; // -2 vbuffer, -1 tbuffer, 0 ... index of overwrite in matrixdata
     uint16_t storeSize;
 };
 

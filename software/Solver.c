@@ -7,17 +7,23 @@
 
 int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6};
 
+int tbuffer[MATRIXSIZE] = {0,0,0,0,0,0,0};
+
 int testVector[VECTORSIZE] = {2,2,2,2};
 
-int buffer[MATRIXSIZE] = {0,0,0,0,0,0,0};
+int vbuffer[VECTORSIZE] = {0,0,0,0};
+
 
 void solver_receive(command_t ** c){
     int * starts = command_getStarts(c);
-    int store = command_getStore(c);
+    int store = command_getStore(c); // -2 vbuffer, -1 tbuffer, 0 ... index of overwrite in matrixdata
     int * storeLocation;
-    if(command_getStore(c) == -1){
-        storeLocation = buffer;
+    if(store == -1){
+        storeLocation = tbuffer;
         store = 0; //TODO: set to correct buffer position
+    } else if (store == -2){
+        storeLocation = vbuffer;
+        store = 0;
     } else {
         storeLocation = testToeplitz;
     }
@@ -46,13 +52,17 @@ void solver_print(){
     for(int i = 0; i < MATRIXSIZE; i++){
         printf("%d \t", testToeplitz[i]);
     }
+    printf("\n TBuffer:\t ");
+    for(int i = 0; i < MATRIXSIZE; i++){
+        printf("%d \t", tbuffer[i]);
+    }
     printf("\n Vector:\t ");
     for(int i = 0; i < VECTORSIZE; i++){
         printf("%d \t", testVector[i]);
     }
-    printf("\n Buffer:\t ");
-    for(int i = 0; i < MATRIXSIZE; i++){
-        printf("%d \t", buffer[i]);
+    printf("\n VBuffer:\t ");
+    for(int i = 0; i < VECTORSIZE; i++){
+        printf("%d \t", vbuffer[i]);
     }
     printf("\n\n");
 }
