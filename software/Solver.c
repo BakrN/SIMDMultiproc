@@ -40,19 +40,19 @@ void solver_receive(command_t ** c){
 
 
 void solver_print(){
-    printf("## Solver print ## \n");
+    printf("## Solver print ##");
 
-    printf("\n Toeplitz: ");
+    printf("\n Toeplitz:\t ");
     for(int i = 0; i < MATRIXSIZE; i++){
         printf("%d \t", testToeplitz[i]);
     }
-    printf("\n Vector: ");
+    printf("\n Vector:\t ");
     for(int i = 0; i < VECTORSIZE; i++){
         printf("%d \t", testVector[i]);
     }
-    printf("\n Buffer:");
+    printf("\n Buffer:\t ");
     for(int i = 0; i < MATRIXSIZE; i++){
-        printf("%d \t", testToeplitz[i]);
+        printf("%d \t", buffer[i]);
     }
-    printf("#####\n");
+    printf("\n\n");
 }

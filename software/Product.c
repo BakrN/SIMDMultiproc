@@ -50,10 +50,6 @@ void product_decompose(product_node_t **pn){
         //Command 2 = m_decomp[1] + m_decomp[2]
         //Command 3 = v_decomp[0] + v_decomp[1]
 
-        command_send(&c1);
-        command_send(&c2);
-        command_send(&c3);
-
 
         //Command 4 = C1 . v_decomp[1] -> create new product
         //Command 5 = m_decomp[1] . C3
