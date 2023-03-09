@@ -14,6 +14,7 @@ struct command{
 };
 
 void command_create(command_t ** c, uint8_t opcode, command_t ** parent, int e0, int e1, int e2, int store, uint16_t storeSize){
+    *c = malloc(sizeof(struct command));
     (*c)->store = store;
     (*c)->opcode = opcode;
     (*c)->storeSize = storeSize;
