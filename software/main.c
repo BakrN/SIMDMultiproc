@@ -31,8 +31,7 @@ int main(){
 
 
     printf("%s", "## Product test ##\n");
-    product_node_t * pn = product_node_create(NULL, m, v);
-    product_decompose(&pn);
+    product_create(m, v);
 
     printf("End of Main\n");
     return 0;

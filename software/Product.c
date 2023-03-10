@@ -7,7 +7,8 @@
 
 
 struct product_node {
-    product_node_t *parent, *p0, *p1, *p2, *p3, *p4, *p5;
+    product_node_t *p0, *p1, *p2, *p3, *p4, *p5;
+    int parent_id;
     matrix_t *m;
     vector_t *v;
 };
@@ -18,13 +19,13 @@ struct product{
 
 product_t* product_create(matrix_t *m, vector_t *v){
     product_t * product = malloc(sizeof(struct product));
-    product->head = product_node_create(NULL, m, v);
+    product->head = product_node_create(0, m, v);
     return product;
 }
 
-product_node_t* product_node_create(product_node_t **parent, matrix_t *m, vector_t *v){
+product_node_t* product_node_create(int parent_id, matrix_t *m, vector_t *v){
     product_node_t * node = malloc(sizeof(struct product_node));
-    if(parent != NULL) node->parent = *parent;
+    node->parent_id = parent_id;
     node->m = m;
     node->v = v;
     return node;
@@ -41,11 +42,11 @@ void product_decompose(product_node_t **pn){
         matrix_t ** m_decomp = matrix_2decompose(&(*pn)->m);
         vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
         command_t * c1;
-        command_create(&c1, 0, NULL, matrix_getDataStart(&m_decomp[0]), matrix_getDataStart(&m_decomp[1]),-1, matrix_getDataStart(&m_decomp[0]), length/2);
+        command_create(&c1, 0, (*pn)->parent_id, matrix_getDataStart(&m_decomp[0]), matrix_getDataStart(&m_decomp[1]),-1, matrix_getDataStart(&m_decomp[0]), length/2);
         command_t * c2;
-        command_create(&c2, 0, NULL, matrix_getDataStart(&m_decomp[1]), matrix_getDataStart(&m_decomp[2]),-1, matrix_getDataStart(&m_decomp[2]), length/2);
+        command_create(&c2, 0, (*pn)->parent_id, matrix_getDataStart(&m_decomp[1]), matrix_getDataStart(&m_decomp[2]),-1, matrix_getDataStart(&m_decomp[2]), length/2);
         command_t * c3;
-        command_create(&c3, 0, NULL, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,-2,length/2);
+        command_create(&c3, 0, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,-2,length/2);
         //Command 1 = m_decomp[0] + m_decomp[1]
         //Command 2 = m_decomp[1] + m_decomp[2]
         //Command 3 = v_decomp[0] + v_decomp[1]

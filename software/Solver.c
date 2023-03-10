@@ -18,12 +18,14 @@ void solver_receive(command_t ** c){
     int * starts = command_getStarts(c);
     int store = command_getStore(c); // -2 vbuffer, -1 tbuffer, 0 ... index of overwrite in matrixdata
     int * storeLocation;
+    int * dataLocation = testToeplitz;
     if(store == -1){
         storeLocation = tbuffer;
         store = 0; //TODO: set to correct buffer position
     } else if (store == -2){
         storeLocation = vbuffer;
-        store = 0;
+        dataLocation = testVector;
+        store = 0; //TODO: set to correct buffer position
     } else {
         storeLocation = testToeplitz;
     }
@@ -31,7 +33,7 @@ void solver_receive(command_t ** c){
 
     if(command_getOpcode(c) == 0){ //addition operation
         for (int i = 0; i < size; i++){
-            storeLocation[store + i] = testToeplitz[starts[0] + i] + testToeplitz[starts[1] + i];
+            storeLocation[store + i] = dataLocation[starts[0] + i] + dataLocation[starts[1] + i];
         }
 
     }
