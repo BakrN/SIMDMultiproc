@@ -15,5 +15,9 @@ if [ -z "$MEM" ]; then
     vvp sim/tb_mem.vvp | tee sim/tb_mem.log
     gtkwave sim/tb_mem.vcd
 fi  
-
+if [ -z "$PROC" ]; then
+    iverilog -Wall -g2012 -o sim/tb_proc.vvp tb_proc.sv 
+    vvp sim/tb_proc.vvp | tee sim/tb_proc.log
+    gtkwave sim/tb_proc.vcd
+fi  
 

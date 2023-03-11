@@ -1,4 +1,4 @@
-`include "array.v" 
+`include "array.sv" 
 `include "defines.sv" 
 /* Instruction steps: 
     IDLE
@@ -57,7 +57,7 @@ module proc(
     output o_busy; 
     output logic o_ack ; 
     output addr_t o_addr ; // for accessing shared mem  
-    output logic[1:0] o_wr_size; 
+    output logic[2:0] o_wr_size;  
     input logic [127:0] i_data  ; // data read from shared mem
     output logic [127:0]  o_data; 
 
@@ -135,18 +135,15 @@ end
             // FSM Process 
             FETCH1: begin 
                 if(i_grant_rd) begin 
-                    if (1) begin  // if done read 
+                    //if (1) begin  // if done read 
                         reg0 <= i_data ; 
                         state <= FETCH2 ;  
-                    end
+                    //end
                 end 
             end
             FETCH2: begin 
-                    if (1) begin  // if done read 
-                        reg1 <= i_data ; 
-                        state <= WRITE;  
-                    end
-                    // when movin on set  req to 0 
+                    reg1 <= i_data ; 
+                    state <= WRITE;  
             end
             
             WRITE: begin 
@@ -159,7 +156,7 @@ end
                             state <= FINISHED ;  
                         end else  begin 
                             // update count 
-                            instr_info.count <= instr_info - 4 ; // - SIMD WIDTH 
+                            instr_info.count <= instr_info.count - 4 ; // - SIMD WIDTH 
                             state <= FETCH1;  
                         end
                     //end 

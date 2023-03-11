@@ -19,7 +19,7 @@ typedef enum logic {INSTR_LD, INSTR_INFO} opcode_t;
 // set info:  set size, and which to data to overwrite
 typedef struct packed { 
         logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;  // How many elements 
-        logic [1:0] op ; // operation . 0 for add ,  1 for mul , 2 for sub 
+        logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul 
         logic overwrite ; // 0: overwrite addr_0 , 1: overwrite addr_1 ;
 } instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
