@@ -1,0 +1,10 @@
+0000195e,ffffdd7b,fffff0df,ffffe5cc
+00000561,00004689,00002687,00003dac
+00000353,0000237b,000008db,00004ff6
+ffffe793,fffffd82,ffffe5ee,000055c7
+ffffb05c,ffffaea8,000013ae,fffff6bf
+000047ce,ffffc536,fffff0ff,ffffcbe1
+ffffdeb0,ffffffc5,ffffdf34,ffffe6b7
+ffffd944,ffffeb9d,00000871,000033aa
+00000621,00001de9,ffffc4ff,ffffc4df
+ffffc575,000015fb,00002350,fffff8dd

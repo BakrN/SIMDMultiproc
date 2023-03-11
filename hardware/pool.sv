@@ -1,5 +1,5 @@
 `include "defines.sv"
-`include "simd/proc.sv"
+`include "proc.sv"
 module pool( 
     i_instr   ,   
     i_clk     , 

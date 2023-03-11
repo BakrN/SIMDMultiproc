@@ -9,7 +9,7 @@
 module issuer ( 
     i_clk, 
     i_rstn, 
-    i_ack , 
+    i_queue_ack , 
     
     // fifo ports
     i_cmd ,
@@ -26,7 +26,7 @@ module issuer (
 input i_clk ;
 input i_rstn ;
 
-input i_ack ; 
+input i_queue_ack ; 
 input [`PROC_COUNT-1:0] i_busy ; 
 input [`PROC_COUNT-1:0] i_finish; 
 input [`PROC_COUNT-1:0] o_en_arr ; 
@@ -50,7 +50,8 @@ localparam CMD_GET = 7 ;
 localparam CMD_CHECK = 8 ; // check with scoreboard
 localparam CMD_WRITEBACK = 9 ; // writeback to cmd_queue if there's a dependency in scoreboard
 // PROC_FINISH
-localparam MAP_OP = 10 ; 
+
+localparam PROC_FINISH = 10 ; 
 localparam SEND_ACK   = 11 ; // send ack to proc out of find_first_set_bit 
  
 logic [3:0] state ; 
@@ -72,8 +73,8 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             IDLE: begin  
                 if(|i_finish) begin  
                     // flush id  
-                    map_flush <= 1 ; 
-                    state <= MAP_LOOKUP; 
+                    //map_flush <= 1 ; 
+                    state <= PROC_FINISH; 
                 end
                 else if (~|i_busy) begin  
                     // pop last cmd from fifo
@@ -87,14 +88,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     map_write <= 0 ; 
                 end
             end
-            MAP_OP: begin 
+            PROC_FINISH: begin 
                 if (map_ack) begin 
-                    if(map_flush) begin 
-                        state <= SEND_ACK;  
-                    end 
-                    else begin 
-
-                    end
+                    state <= SEND_ACK;  
                 end
             end 
             SEND_ACK: begin 
@@ -118,7 +114,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 state <= WAIT_ACK; 
             end
             WAIT_ACK: begin 
-                if (i_ack) begin  
+                if (i_queue_ack) begin  
                     state <= next_state; 
                 end
             end
@@ -154,7 +150,8 @@ always_latch begin
         end  
         CMD_WRITEBACK: begin 
             next_state = IDLE; 
-        end
+        end 
+
         
         
         
@@ -177,23 +174,26 @@ find_first_set_bit #(`PROC_COUNT) free_proc_finder(
 entry_t map_entry;
 logic   map_write; 
 logic   map_flush;
+logic   map_flush_val;
 logic   map_read;
 logic   map_value ; 
 logic   map_exists ;
 logic   map_ack ;
-assign map_entry.cmd_id = next_cmd.dep;
+assign map_entry.cmd_id  = next_cmd.dep;
+assign map_entry.proc_id = finish_bit_pos; 
 scoreboard  u_scoreboard (
     .i_clk                      ( i_clk                       ),
     .i_rstn                     ( i_rstn                      ),
     .i_entry                    ( map_entry                   ), 
     .i_write                    ( map_write                   ),
     .i_flush                    ( map_flush                   ),
+    .i_flush_val                ( map_flush_val               ), 
     .i_read                     ( map_read                    ),
     .o_id                       ( map_value                   ), 
     .o_ack                      ( map_ack                     ), 
     .o_exists                   ( map_exists                  )
 ); 
-
+assign map_val = (state==PROC_FINISH); 
 assign o_ack = (state==SEND_ACK) ? (`PROC_COUNT'b1 << finish_bit_pos): 0 ; 
 assign o_en_arr = (state < WAIT_ACK) ?  1 :0  ; 
 endmodule   

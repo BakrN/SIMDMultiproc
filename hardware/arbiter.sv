@@ -1,4 +1,4 @@
-`include "arbitration_algorithm.sv"
+`include "./arbitration_algorithm.sv"
 
 module arbiter #(
     N_REQ = 8  // number of requesters
@@ -22,6 +22,7 @@ module arbiter #(
 
     logic should_service_next;
     // check for deassertions
+    logic [N_REQ-1:0] mask; 
     assign mask = o_grant & i_req; 
     always @(*) begin 
         if (|mask==0) begin 
