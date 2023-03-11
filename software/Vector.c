@@ -68,7 +68,7 @@ vector_t ** vector_3decompose(vector_t **vector){
 }
 
 void vector_print(vector_t **vector, int * data){
-        printf("[%d]: ", (*vector)->length);
+    printf("[%d]:\t ", (*vector)->length);
 
     int data_size = (*vector)->length; //Size of the data vector
     for(int i = (*vector)->index; i <(*vector)->index + data_size; i++){
