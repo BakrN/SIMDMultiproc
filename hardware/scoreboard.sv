@@ -119,8 +119,8 @@ module scoreboard  (
         end
     end
     // on change of state 
-    always @(next_state) begin   
-        if (next_state!=IDLE) begin 
+    always @(base_index) begin   
+        if (state ==IDLE) begin 
             probe_idx = base_index;  
             reinit <= 1;   
         end
@@ -135,7 +135,7 @@ module scoreboard  (
     always_comb begin
         if (i_write) begin 
             next_state = WRITE ; 
-        end else if (i_read | i_flush) begin 
+        end else if (i_read | i_flush | i_flush_val) begin 
             next_state = READ;   
         end  else begin 
             next_state = IDLE;  

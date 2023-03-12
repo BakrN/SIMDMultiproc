@@ -38,8 +38,8 @@ module cmd_queue#(parameter DEPTH =16, parameter WIDTH=248 ) (
     localparam WR_CTRL  = 3  ;   
     assign fifo_write = state[1];
     assign fifo_data = (select) ? i_data_issuer : i_data_ctrl;   
-
-    fifo #(
+    logic trigger ; 
+    fifo #( 
         .WIDTH ( $bits(cmd_t) ),
         .DEPTH ( 16  ))
      u_fifo (
@@ -55,13 +55,15 @@ module cmd_queue#(parameter DEPTH =16, parameter WIDTH=248 ) (
     always_ff @(posedge i_clk or negedge i_rstn) begin
         if (!i_rstn) begin 
             state <= IDLE;  
-        end else begin 
+        end else if (trigger) begin 
             if (i_wr_ctrl ) begin 
                 select <= 0 ; 
-                state <= WR_CTRL;  
+                state <= WR_CTRL;   
+                trigger = i_wr_issuer; 
             end else if (i_wr_issuer) begin 
                 select <= 1 ; 
                 state <= WR_ISSUER; 
+                trigger =  i_wr_ctrl; 
             end
             case (state)  
                WR_CTRL: begin 
@@ -76,5 +78,10 @@ module cmd_queue#(parameter DEPTH =16, parameter WIDTH=248 ) (
             endcase
         end
     end
+    always @(posedge i_wr_ctrl or posedge i_wr_issuer) begin // only trigger on changes 
+        trigger = 1 ; 
+    end 
+    //i_wr_ctrl  i_wr_issuer;
+
 
 endmodule 

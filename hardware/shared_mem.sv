@@ -25,11 +25,11 @@ module shared_mem #(parameter COUNT = 4,
     // mem info 
     output logic [BUS_SIZE-1:0] o_proc_rd [COUNT-1:0];  
     input logic [BUS_SIZE-1:0] i_proc_wr [COUNT-1:0]; 
-    input logic [1:0] i_wr_size [COUNT-1:0];  
-    input addr_t i_proc_addr [COUNT-1:0];   // read addresses of all processors
+    input logic [2:0] i_wr_size [COUNT-1:0];  
+    input addr_t i_proc_addr [COUNT-1:0];   // read addresses of all processors 
     logic [BUS_SIZE-1:0] rd_data; 
     logic [BUS_SIZE-1:0] wr_data;  
-    logic [1:0] wr_size ; 
+    logic [2:0] wr_size ; 
     logic wr_en ; 
     addr_t wr_addr; 
     addr_t rd_addr; 

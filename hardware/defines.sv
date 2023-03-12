@@ -36,7 +36,7 @@ typedef struct packed{
         cmd_id_t dep; // dependency id
         addr_t addr_0;    
         addr_t addr_1;
-        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] size;// size of operation (how many elements) 
+        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;// size of operation (how many elements) 
         logic [1:0]  op ; // add mul sub    
         logic wr_addr ;  // result writeback_addr. 0 for addr_0 , 1 for addr_1 
 
