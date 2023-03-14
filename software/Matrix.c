@@ -7,7 +7,7 @@
 
 struct matrix{
     uint16_t size; //Amount of Columns (2 bytes)
-    int index; //TODO: define exact data type for efficiency //first column bottom up - first row left to right (0 e d a b c 0)
+    int index; //center of data
 };
 
 matrix_t* matrix_create(int size, int index){
@@ -32,7 +32,7 @@ matrix_t* matrix_padEnd(matrix_t **matrix, int amount){
     return *matrix;
 }
 
-int matrix_getDataStart(matrix_t **matrix){
+int matrix_getDataCenter(matrix_t **matrix){
     return (*matrix)->index;
 }
 
@@ -40,11 +40,11 @@ matrix_t ** matrix_2decompose(matrix_t **matrix){
     matrix_t ** decomposed = malloc(3*sizeof(matrix_t *)); //array of ptrs to the decomposed matrices
 
     int new_size = (*matrix)->size /2 ;
-    matrix_t * m0 = matrix_create(new_size, (*matrix)->index);
+    matrix_t * m0 = matrix_create(new_size, (*matrix)->index -(*matrix)->size/2 -1); //shift center to left
     decomposed[0] = m0;
-    matrix_t * m1 = matrix_create(new_size, (*matrix)->index + new_size);
+    matrix_t * m1 = matrix_create(new_size, (*matrix)->index); //same center
     decomposed[1] = m1; 
-    matrix_t * m2 = matrix_create(new_size, (*matrix)->index + new_size*2);
+    matrix_t * m2 = matrix_create(new_size, (*matrix)->index +(*matrix)->size/2 +1); //shift center to right
     decomposed[2] = m2; 
 
     return decomposed;
@@ -75,8 +75,7 @@ matrix_t ** matrix_3decompose(matrix_t **matrix){
 void matrix_print(matrix_t **matrix, int * data){
     printf("[%d, %d]: ", (*matrix)->size, (*matrix)->size);
 
-    int data_size = 2*((*matrix)->size) -1; //Size of the data vector
-    for(int i = (*matrix)->index; i < (*matrix)->index + data_size; i++){
+    for(int i = (*matrix)->index - (*matrix)->size +1; i < (*matrix)->index + (*matrix)->size -1; i++){
         printf("%d \t", data[i]);
     }
     printf("\n");
