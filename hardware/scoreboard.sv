@@ -7,6 +7,7 @@
 /*
 *   @brief scoreboard module
 *   @details This module implements an associative array (hashmap) with linear probing for collision resolution. 
+
 */ 
 module scoreboard  (
     i_clk , 
@@ -14,6 +15,7 @@ module scoreboard  (
     i_entry,  
     i_write, 
     i_flush, 
+    i_flush_val,  // flush by val 
     i_read , 
     o_id   , // outupt processor id 
     o_ack, // valid result
@@ -34,7 +36,7 @@ module scoreboard  (
     input i_write; // For adding entry to scoreboard
     input i_flush; // for removing entry from scoreboard  
     input i_read ; // for checking if key exists and if exists retrieve proc id  
-
+    input i_flush_val ;  
     output logic [$clog2(`PROC_COUNT)-1:0] o_id;
     output o_exists; 
     output o_ack ; 
@@ -49,7 +51,7 @@ module scoreboard  (
     logic [$clog2(`PROC_COUNT)-1:0] probe_idx; 
     logic [$clog2(`PROC_COUNT)-1:0] base_index; 
 
-    logic found , reinit ,flush; 
+    logic found , reinit ,flush, flush_val; 
     assign base_index = i_entry.cmd_id%`PROC_COUNT; 
     //logic [$clog2(`PROC_COUNT)-1:0] r_idx; 
     //logic [$clog2(`PROC_COUNT)-1:0] r_probe_idx_original ;
@@ -66,26 +68,31 @@ module scoreboard  (
             case(state) 
                 IDLE: begin  
                     state <= next_state ; 
-                    found <= 0 ;  
+                    found <= 0 ;   
                 end
                 READ: begin    
                     // if looped aroung to original index without finding key then stop  
-                    if (!reinit && probe_idx == base_index ) begin 
+                    if ((!reinit && probe_idx == base_index) || !valid_table[probe_idx]) begin 
                         found <= 0 ; 
                         state <= OUT; 
+                        flush <= 0 ; 
+                        flush_val <= 0 ; 
                     end
-                    if (!valid_table[probe_idx]) begin 
-                        found <=  0  ;  
-                        state <= OUT ;  
-                        flush <= 0 ;
-                    end
+                    else if (flush_val && current_entry.proc_id == i_entry.proc_id)begin // Special case for search by val . Used when proc triggers 
+                        valid_table[probe_idx] = 0 ; 
+                        flush_val <= 0 ; 
+                        state <= OUT ; 
+                        found <= 1; 
+                    end 
                     // if found 
-                    else if (current_entry.cmd_id == i_entry.cmd_id) begin 
+                    else if (!flush_val && current_entry.cmd_id == i_entry.cmd_id ) begin 
                         if (flush) begin 
                             valid_table[probe_idx] = 0 ; 
                         end 
                         found <= 1; 
                         state <= OUT ;  
+                        flush <= 0 ;
+                        
                     end
                     // IF occupied move forward 
                     else begin 
@@ -112,8 +119,8 @@ module scoreboard  (
         end
     end
     // on change of state 
-    always @(next_state) begin   
-        if (next_state!=IDLE) begin 
+    always @(base_index) begin   
+        if (state ==IDLE) begin 
             probe_idx = base_index;  
             reinit <= 1;   
         end
@@ -121,11 +128,14 @@ module scoreboard  (
     always @(posedge i_flush) begin  
         flush <= 1 ; 
     end
+    always @(posedge i_flush_val) begin 
+        flush_val <= 1 ; 
+    end
     // Calculate next entry 
     always_comb begin
         if (i_write) begin 
             next_state = WRITE ; 
-        end else if (i_read | i_flush) begin 
+        end else if (i_read | i_flush | i_flush_val) begin 
             next_state = READ;   
         end  else begin 
             next_state = IDLE;  

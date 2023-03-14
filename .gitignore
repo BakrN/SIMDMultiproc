@@ -12,3 +12,6 @@ product_processor
 *.lib
 
 *.vcd
+*.vvp 
+*.log
+hardware/sim/* 
