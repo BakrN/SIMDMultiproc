@@ -66,6 +66,6 @@ uint16_t command_getStoreSize(command_t ** command){
 
 void command_print(command_t ** command){
     printf("\n Command:\t ");
-    printf("opcode{%d} id{%d} pid{%d} centers{%ls} store{%d} size{%d} \n\n", command_getOpcode(command),command_getId(command), command_getParentId(command),command_getCenters(command), command_getStore(command),command_getStoreSize(command));
+    printf("opcode{%d} id{%d} pid{%d} centers{%d, %d} store{%d} size{%d} \n\n", command_getOpcode(command),command_getId(command), command_getParentId(command),command_getCenters(command)[0],command_getCenters(command)[1], command_getStore(command),command_getStoreSize(command));
 }
 

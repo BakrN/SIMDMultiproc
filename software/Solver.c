@@ -26,9 +26,21 @@ void solver_receive(command_t ** c){
 
     if(command_getOpcode(c) == 0){ //T addition
 
-        for (int i = -storeSize-1; i < storeSize; i++){
-            tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
+        if(starts[0]<starts[1]){
+            for (int i = -storeSize+1; i < storeSize; i++){
+                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
+                printf("[%d]: ", store + i);
+                printf("%d \t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+            }
+        } else {
+            for (int i = storeSize -1; i > -storeSize; i--){
+                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
+                printf("[%d]: ", store + i);
+                printf("%d \t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+            }
         }
+        
+        printf("\n");
 
     }
     if(command_getOpcode(c) == 1){ //V addition
