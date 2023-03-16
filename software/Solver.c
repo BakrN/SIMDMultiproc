@@ -6,10 +6,9 @@ int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6};
 
 int tbuffer[] = {0,0,1,2,3,4,5,6,0};
 
-int testVector[VECTORSIZE] = {2,2,2,2};
+int testVector[VECTORSIZE] = {1,2,3,4};
 
-int vbuffer[VECTORSIZE] = {};
-
+int vbuffer[] = {1,2,3,4,0,0,0,0,0};
 
 void solver_receive(command_t ** c){
     int * starts = command_getCenters(c);
@@ -28,27 +27,32 @@ void solver_receive(command_t ** c){
 
         if(starts[0]<starts[1]){
             for (int i = -storeSize+1; i < storeSize; i++){
-                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
                 printf("[%d]: ", store + i);
-                printf("%d \t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+                printf("%d +\t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
             }
         } else {
             for (int i = storeSize -1; i > -storeSize; i--){
-                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
                 printf("[%d]: ", store + i);
-                printf("%d \t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+                printf("%d +\t %d\n", tbuffer[starts[0] + i],tbuffer[starts[1] + i]);
+                tbuffer[store + i] = tbuffer[starts[0] + i] + tbuffer[starts[1] + i];
             }
         }
-        
-        printf("\n");
-
     }
     if(command_getOpcode(c) == 1){ //V addition
-
+        for (int i = storeSize-1; i >= 0; i--)
+        {
+            printf("[%d]: ", store + i);
+            printf("%d +\t %d\n", vbuffer[starts[0] + i],vbuffer[starts[1] + i]);
+            vbuffer[store + i] = vbuffer[starts[0] + i] + vbuffer[starts[1] +i];
+        }
+        
     }
     if(command_getOpcode(c) == 2){ //TV multiplication
 
     }
+
+    printf("\n");
 
     solver_print();
 }
@@ -70,7 +74,7 @@ void solver_print(){
         printf("%d \t", testVector[i]);
     }
     printf("\n VBuffer:\t ");
-    for(int i = 0; i < VECTORSIZE; i++){
+    for(int i = 0; i < VBUFFERSIZE; i++){
         printf("%d \t", vbuffer[i]);
     }
     printf("\n\n");
