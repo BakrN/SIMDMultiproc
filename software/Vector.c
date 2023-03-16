@@ -44,9 +44,9 @@ vector_t ** vector_2decompose(vector_t **vector){
     vector_t ** decomposed = malloc(2*sizeof(vector_t *)); //array of ptrs to the decomposed matrices
 
     int new_size = (*vector)->length /2 ;
-    vector_t * m0 = vector_create(new_size, (*vector)->index + new_size);
+    vector_t * m0 = vector_create(new_size, (*vector)->index);
     decomposed[0] = m0;
-    vector_t * m1 = vector_create(new_size, (*vector)->index + new_size*2);
+    vector_t * m1 = vector_create(new_size, (*vector)->index + new_size);
     decomposed[1] = m1; 
     // vector_print(&m1);
 

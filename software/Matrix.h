@@ -11,7 +11,7 @@ matrix_t* matrix_padStart(matrix_t **matrix, int amount);
 
 matrix_t* matrix_padEnd(matrix_t **matrix, int amount);
 
-int matrix_getDataStart(matrix_t **matrix);
+int matrix_getDataCenter(matrix_t **matrix);
 
 matrix_t ** matrix_2decompose(matrix_t **matrix);
 

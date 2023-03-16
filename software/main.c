@@ -3,15 +3,11 @@
 #include <stdio.h>
 #include "Matrix.h"
 #include "Product.h"
+#include "Solver.h"
 
 int main(){
-    printf("%s", "## Matrix test ##\n");
-    int testData[7] = {0,1,2,3,4,5,6};
-    int testVector[4] = {2,2,2,2};
-    matrix_t * m = matrix_create(4, 0);
+    matrix_t * m = matrix_create(4, MATRIXCENTER);
     vector_t * v = vector_create(4, 0);
-    matrix_print(&m, testData);
-    vector_print(&v, testVector);
 
     // matrix_t ** m_decomp = (matrix_t **) matrix_2decompose(&m);
     // matrix_print(&m_decomp[0],testData); 
