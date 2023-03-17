@@ -46,8 +46,8 @@ void product_decompose(product_node_t **pn){
     if(length % 2 == 0 && length >2){
         matrix_t ** m_decomp = matrix_2decompose(&(*pn)->m);
         vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
-        command_create(0,id_count, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[0]) + length/2 -1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[0]), length/2);
-        command_create(0,id_count +1, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[2])  - length/2 +1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[2]), length/2);
+        command_create(0,id_count, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[0]) + length/2 +1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[0]), length/2);
+        command_create(0,id_count +1, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[2])  - length/2 -1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[2]), length/2);
         command_create(1,id_count +2, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]),vector_getDataStart(&v_decomp[1]),-1,vindex + vector_getDataStart(&v_decomp[0])/2,length/2);
         //Command 1 = m_decomp[0] + m_decomp[1]
         //Command 2 = m_decomp[1] + m_decomp[2]

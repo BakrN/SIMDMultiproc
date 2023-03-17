@@ -40,11 +40,11 @@ matrix_t ** matrix_2decompose(matrix_t **matrix){
     matrix_t ** decomposed = malloc(3*sizeof(matrix_t *)); //array of ptrs to the decomposed matrices
 
     int new_size = (*matrix)->size /2 ;
-    matrix_t * m0 = matrix_create(new_size, (*matrix)->index -(*matrix)->size/2 -1); //shift center to left
+    matrix_t * m0 = matrix_create(new_size, (*matrix)->index -(*matrix)->size -1); //shift center to left
     decomposed[0] = m0;
     matrix_t * m1 = matrix_create(new_size, (*matrix)->index); //same center
     decomposed[1] = m1; 
-    matrix_t * m2 = matrix_create(new_size, (*matrix)->index +(*matrix)->size/2 +1); //shift center to right
+    matrix_t * m2 = matrix_create(new_size, (*matrix)->index +(*matrix)->size +1); //shift center to right
     decomposed[2] = m2; 
 
     return decomposed;

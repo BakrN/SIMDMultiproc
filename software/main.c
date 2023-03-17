@@ -6,8 +6,8 @@
 #include "Solver.h"
 
 int main(){
-    matrix_t * m = matrix_create(4, MATRIXCENTER);
-    vector_t * v = vector_create(4, 0);
+    matrix_t * m = matrix_create(8, MATRIXCENTER);
+    vector_t * v = vector_create(8, 0);
 
     // matrix_t ** m_decomp = (matrix_t **) matrix_2decompose(&m);
     // matrix_print(&m_decomp[0],testData); 

@@ -2,13 +2,13 @@
 #include "Command.h"
 #include <stdio.h>
 
-int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6};
+int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 
-int tbuffer[] = {0,0,1,2,3,4,5,6,0};
+int tbuffer[] = {0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,0,0,0,0,0};
 
-int testVector[VECTORSIZE] = {1,2,3,4};
+int testVector[VECTORSIZE] = {1,2,3,4,5,6,7,8};
 
-int vbuffer[] = {1,2,3,4,0,0,0,0,0};
+int vbuffer[VBUFFERSIZE] = {1,2,3,4,5,6,7,8};
 
 void solver_receive(command_t ** c){
     int * starts = command_getCenters(c);
