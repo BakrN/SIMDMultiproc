@@ -3,8 +3,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-int id_count;
-
 struct command{
     uint8_t opcode; //T 0 addition, 1 V addition, 2 multiply
     int id;
@@ -14,13 +12,12 @@ struct command{
     uint16_t storeSize;
 };
 
-void command_create(uint8_t opcode, int parent_id, int e0, int e1, int e2, int store, uint16_t storeSize){
+void command_create(uint8_t opcode,int id, int parent_id, int e0, int e1, int e2, int store, uint16_t storeSize){
     command_t * c = malloc(sizeof(struct command));
     c->store = store;
     c->opcode = opcode;
     c->storeSize = storeSize;
-    id_count ++;
-    c->id = id_count;
+    c->id = id;
     c->parent_id = parent_id;
     if(e2 != -1){ 
         c->elements = malloc(sizeof(int)*3);
