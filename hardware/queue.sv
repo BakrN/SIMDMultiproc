@@ -59,11 +59,11 @@ module cmd_queue#(parameter DEPTH =16, parameter WIDTH=248 ) (
             if (i_wr_ctrl ) begin 
                 select <= 0 ; 
                 state <= WR_CTRL;   
-                trigger = i_wr_issuer; 
+                trigger <= i_wr_issuer; 
             end else if (i_wr_issuer) begin 
                 select <= 1 ; 
                 state <= WR_ISSUER; 
-                trigger =  i_wr_ctrl; 
+                trigger <=  i_wr_ctrl; 
             end
             case (state)  
                WR_CTRL: begin 
