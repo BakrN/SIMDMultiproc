@@ -39,17 +39,17 @@ product_t* product_set_head(product_t **product, product_node_t **pn){
 
 void product_decompose(product_node_t **pn){
     uint16_t length = vector_getLength(&(*pn)->v);
-    if(length % 2 == 0){
+    if(length % 2 == 0 && length >=2){
         matrix_t ** m_decomp = matrix_2decompose(&(*pn)->m);
         vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
         command_create(0, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[0]) + length/2 -1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[0]), length/2);
         command_create(0, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[2])  - length/2 +1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[2]), length/2);
-        command_create(1, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,vector_getDataStart(&v_decomp[0]) + length/2 +1 ,length/2);
+        command_create(1, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]), vector_getDataStart(&v_decomp[1]),-1,vector_getDataStart(&v_decomp[0])/2,length/2);
         //Command 1 = m_decomp[0] + m_decomp[1]
         //Command 2 = m_decomp[1] + m_decomp[2]
         //Command 3 = v_decomp[0] + v_decomp[1]
 
-
+        // (*pn)->p0 = product_node_create();
         //Command 4 = C1 . v_decomp[1] -> create new products
         //Command 5 = m_decomp[1] . C3
         //Command 6 = C2 . v_decomp[0]
