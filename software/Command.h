@@ -6,7 +6,7 @@
 
 typedef struct command command_t;
 
-void command_create(uint8_t opcode, int parent_id, int e0, int e1, int e2, int store, uint16_t storeSize);
+void command_create(uint8_t opcode,int id, int parent_id, int e0, int e1, int e2, int store, uint16_t storeSize);
 
 void command_send(command_t ** command);
 

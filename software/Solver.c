@@ -2,13 +2,13 @@
 #include "Command.h"
 #include <stdio.h>
 
-int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6};
+int testToeplitz[MATRIXSIZE] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14};
 
-int tbuffer[] = {0,0,1,2,3,4,5,6,0};
+int tbuffer[] = {0,0,0,0,0,0,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,0,0,0,0,0,0};
 
-int testVector[VECTORSIZE] = {1,2,3,4};
+int testVector[VECTORSIZE] = {1,2,3,4,5,6,7,8};
 
-int vbuffer[] = {1,2,3,4,0,0,0,0,0};
+int vbuffer[VBUFFERSIZE] = {1,2,3,4,5,6,7,8};
 
 void solver_receive(command_t ** c){
     int * starts = command_getCenters(c);
@@ -40,11 +40,12 @@ void solver_receive(command_t ** c){
         }
     }
     if(command_getOpcode(c) == 1){ //V addition
-        for (int i = storeSize-1; i >= 0; i--)
+        for (int i = 0; i < storeSize; i++)
         {
-            printf("[%d]: ", store + i);
+            printf("[%d]: ",store + i);
             printf("%d +\t %d\n", vbuffer[starts[0] + i],vbuffer[starts[1] + i]);
-            vbuffer[store + i] = vbuffer[starts[0] + i] + vbuffer[starts[1] +i];
+            vbuffer[store + i] = vbuffer[starts[0] + i] + vbuffer[starts[1] +i]; 
+
         }
         
     }
