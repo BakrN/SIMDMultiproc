@@ -72,7 +72,7 @@ void product_decompose(product_node_t **pn){
         (*pn)->p1 = product_node_create(id_count +1, m_decomp[1],v0);
         //Command 5 = m_decomp[1] . C3
 
-        matrix_t * m1 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[0]));
+        matrix_t * m1 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[2]));
         (*pn)->p2 = product_node_create(id_count,m1, v_decomp[0]);
         //Command 6 = C2 . v_decomp[0]
 
