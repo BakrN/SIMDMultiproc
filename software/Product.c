@@ -51,12 +51,16 @@ void product_decompose(product_node_t **pn){
         vector_t ** v_decomp = vector_2decompose(&(*pn)->v);
 
         int vindex = VECTORSIZE + 2*VECTORSIZE/(curr_size) + vector_getDataStart(&v_decomp[0])/2;
+        int tindex = VECTORSIZE/curr_size;
 
-        if(VECTORSIZE == curr_size) vindex = VECTORSIZE + vector_getDataStart(&v_decomp[0]);
+        if(VECTORSIZE == curr_size){
+            vindex = VECTORSIZE + vector_getDataStart(&v_decomp[0]);
+            tindex = 0;
+        }
         printf("\n \033[0;33m ##### vindex [%d] = %d + %d + %d  ##### \033[0m\n,", vindex, VECTORSIZE, 2*VECTORSIZE/curr_size,vector_getDataStart(&v_decomp[0])/2);
 
-        command_create(0,id_count, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[0]) + length/2 +1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[0]), length/2);
-        command_create(0,id_count +1, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[2])  - length/2 -1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[2]), length/2);
+        command_create(0,id_count, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[0]) - tindex + length/2 +1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[0]), length/2);
+        command_create(0,id_count +1, (*pn)->parent_id, matrix_getDataCenter(&m_decomp[2]) + tindex - length/2 -1, matrix_getDataCenter(&m_decomp[1]),-1, matrix_getDataCenter(&m_decomp[2]), length/2);
         command_create(1,id_count +2, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]),vector_getDataStart(&v_decomp[1]),-1,vindex,length/2);
         id_count += 3;
         //Command 1 = m_decomp[0] + m_decomp[1]
