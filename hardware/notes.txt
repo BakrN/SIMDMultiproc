@@ -1,0 +1,25 @@
+TODO: 
+    - Finish up memory system. (check)
+    - Once memory system is verified, finish the processor FSM  (check)
+    - Complete the issuer (also finalize cmd_t format) (completed issuer)
+    - Thorough verification of individual components (check)
+    - Combine modules and verify entire system(write a python script to multiple matrix multiplications) (WIP)
+    - Test issuer without acknowledgement (wastes a few cycles at start (could save time in later cmds)) - need to experiment (not priority)
+    - Top module to test entire workflow (WIP)
+    - Combine enable and valid signal of processor into 1 signal. (not really resource intensive)
+    - Dependency is not garantueed with how the queue is set up  (maybe have the scoreboard also store instructions about to be executed (scoreboard will need to be rewritten to allows for edit to values (assignment to a specific processor))) (instruction should be fetched into buffer same size as the amount of processors)
+        (add edit capability to scoreboard)
+Notes: 
+    - When proc finishes it could be a multicycle thing to go through scoreboard 
+Measurements: 
+    1. Pool utilization 
+    2. Cycles  (Time (microseconds?))
+    3. Efficiency ?  Increasing N and increasing P (N=problem size, P = pool size) 
+Experiments: 
+    1. I'm assuming the algorithm is weakly scalable -> Effeciency is constant if N/P is also constant
+    2. Increase pool sizes
+    3. Play with max size of instruction issued to a processor (in software)
+    4. Try with multiple issuers with divided pool-> (need to edit queue multi port reads) 
+    5. Bandwidth? 
+    5. Faster Clock Frequency for 
+

@@ -4,6 +4,7 @@
 
 `define PROC_COUNT  4
 `define UNIT_SIZE   4 // int32
+`define MEM_SIZE 4096
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
 typedef logic[3:0] cmd_id_t; 

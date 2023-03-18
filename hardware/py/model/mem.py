@@ -18,4 +18,14 @@ class Mem:
         for i in range(self.count): 
             self.data[i] = random.randint(min, max) 
         return self 
+    
+class MemHexSerializer(Mem): 
+    def __init__(self, mem : Mem) -> None:
+        self.mem = mem
+    def serialize(self , filename = "mem.txt"): 
+        with open(filename, "w") as f:
+            for i in range(self.mem.count): 
+                f.write(hex(self.mem.data[i] &  0xFFFFFFFF)[2:])
+        return 
+    
         
