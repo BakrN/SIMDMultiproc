@@ -23,3 +23,4 @@ if [ -z "$ISS" ]; then
     gtkwave sim/tb_issuer.vcd   
 fi  
 
+# What command should I use to run the scoreboard test?

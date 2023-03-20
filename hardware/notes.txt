@@ -19,7 +19,9 @@ Experiments:
     1. I'm assuming the algorithm is weakly scalable -> Effeciency is constant if N/P is also constant
     2. Increase pool sizes
     3. Play with max size of instruction issued to a processor (in software)
-    4. Try with multiple issuers with divided pool-> (need to edit queue multi port reads) 
+    4. Try with multiple issuers with divided pool-> (Not possible with current configuration or current software) (due to dependencies)
     5. Bandwidth? 
     5. Faster Clock Frequency for 
 
+
+Problems with dependency. (need to ask about software ... )

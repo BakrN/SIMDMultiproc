@@ -73,10 +73,11 @@ class CmdQueue:
 
     def add_cmd(self, cmd : Command): 
         # find the first cmd that has a start addr less than the cmd we want to insert
-        idx = binary_search_less_than(self.top_cmd, 0, len(self.top_cmd) - 1, cmd.writeback_addr, lambda x: x.data.writeback_addr) 
         if not self.top_cmd: 
             self.top_cmd.append(Node(cmd)) 
             return 
+        idx = binary_search_less_than(self.top_cmd, 0, len(self.top_cmd) - 1, cmd.writeback_addr, lambda x: x.data.writeback_addr) 
+        
         lesser_node = self.top_cmd[idx]
         
         if lesser_node.data.writeback_addr == cmd.writeback_addr: 
@@ -108,11 +109,45 @@ class CmdQueue:
         i = 0 
         while i < len(self.top_cmd): 
             if self.top_cmd[i].data.status == Status.DONE : # cleanup done commands
-                for node in self.top_cmd[i].children : 
-                    self.add_cmd(node)  
-                self.top_cmd.pop(i) 
+                parent_node =self.top_cmd.pop(i) 
+                for node in parent_node.children : 
+                    self.add_node(node)  
+                
             else :
                 i+= 1 
+    def add_node(self, cmd_node : Node): 
+        if not self.top_cmd: 
+            self.top_cmd.append(cmd_node) 
+            return 
+        idx = binary_search_less_than(self.top_cmd, 0, len(self.top_cmd) - 1, cmd_node.data.writeback_addr, lambda x: x.data.writeback_addr) 
+        
+        lesser_node = self.top_cmd[idx]
+        
+        if lesser_node.data.writeback_addr == cmd_node.data.writeback_addr: 
+            cmd_node.data.dep_id = lesser_node.data.id
+            lesser_node.add_child(cmd_node)
+            return
+
+        elif lesser_node.data.writeback_addr < cmd_node.data.writeback_addr and lesser_node.data.writeback_addr -1 + lesser_node.data.count >= cmd_node.data.writeback_addr: 
+            cmd_node.data.dep_id = lesser_node.data.id
+            lesser_node.add_child(cmd_node)
+            return
+        # Now check following instructions if they're dependent on the cmd we want to insert
+        insert_index = idx + 1 
+        if insert_index >= len(self.top_cmd): 
+            self.top_cmd.append(cmd_node)
+            return 
+        else:  
+            self.top_cmd.insert(insert_index, cmd_node)  
+        i = insert_index + 1
+        while i < len(self.top_cmd):
+            if self.top_cmd[i].data.writeback_addr <= cmd_node.data.writeback_addr + cmd_node.data.count -1  :   
+                self.top_cmd[i].data.dep_id = cmd_node.data.id 
+                self.top_cmd[insert_index].add_child(self.top_cmd[i]) 
+                self.top_cmd.pop(i)  
+            else : 
+                break  
+        return    
                 
     def get_cmd_nodes_lvl(self, lvl=0):  # get cmd from index
         queue = self.top_cmd
@@ -146,9 +181,11 @@ class CmdQueueSerializer: # serialize command queue
         while len(queue) > 0 :
             string+= "Level " + str(level) + ":\n"
             next_queue = []
+            index = 0 
             for node in queue:
-                string+= str(node.data) + "\n"
+                string+= f"Index {index}: " + str(node.data) + "\n"
                 next_queue += node.children
+                index +=1 
             queue = next_queue
             level += 1
 
@@ -162,25 +199,7 @@ class CmdFetcher:
         self.level = 0 
         self.cmd_buffer = []
         pass
-    def fetch(self, count: Union[None, int]= None):
-        if not self.cmd_buffer:
-            self.cmd_buffer = self.queue.get_cmd_nodes_lvl(0)
-            self.current_index = 0 
-        if count is None:
-            count = self.count 
-        # fetch the next batch of commands to be executed (only in top level)
-        cmds = [] 
-        if not self.cmd_buffer:  # if the queue is empty
-            return cmds
-        for i in range(self.current_index, min(len(self.cmd_buffer) , self.current_index + count)):
-            cmds += self.cmd_buffer[i].data
-            count-=1 
-        #if count != 0 :  
-        #    self.level += 1
-        #    self.cmd_buffer = self.queue.get_cmd_nodes_lvl(self.level)
-        #    self.current_index = 0 
-        #    cmds += self.fetch(count)
-        return cmds
+    
 
         
 
@@ -237,3 +256,16 @@ def gen_cmd_queue(count,mem : Mem , max_op_size = 100):
             cmd = gen_mul_cmd(i , addr0, addr1, op_size, writeback_addr)
         queue.add_cmd(cmd)
     return queue
+
+def execute_cmd (cmd : Command , mem : Mem): 
+    if cmd.opcode == Opcode.ADD :
+        for i in range(cmd.count):
+            mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] + mem.data[cmd.addr1 + i]
+    elif cmd.opcode == Opcode.SUB :
+        for i in range(cmd.count):
+            mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] - mem.data[cmd.addr1 + i]
+    elif cmd.opcode == Opcode.MUL :
+        for i in range(cmd.count):
+            mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] * mem.data[cmd.addr1 + i]
+    cmd.status = Status.DONE
+    return mem

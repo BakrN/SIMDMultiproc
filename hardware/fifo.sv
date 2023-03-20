@@ -6,12 +6,12 @@ module fifo #(
   parameter DEPTH = 16 // needs to be power of 2 pref 
   )
   (
-   i_clk,
-   i_rstn,
-   i_read,
+   i_clk  ,
+   i_rstn ,
+   i_read ,
    i_write,
-   i_data,
-   o_data,
+   i_data ,
+   o_data ,
    o_fifo_full,
    o_fifo_empty
   );
