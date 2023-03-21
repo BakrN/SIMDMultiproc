@@ -9,22 +9,13 @@
 int id_count;
 int curr_size = VECTORSIZE;
 
-struct product_node {
-    product_node_t *p0, *p1, *p2, *p3, *p4, *p5;
-    int parent_id;
-    matrix_t *m;
-    vector_t *v;
-};
 
-struct product{
-    product_node_t *head;
-};
 
-product_t* product_create(matrix_t *m, vector_t *v){
+product_node_t* product_create(matrix_t *m, vector_t *v){
     product_t * product = malloc(sizeof(struct product));
     product->head = product_node_create(0, m, v);
     id_count = 0;
-    return product;
+    return product->head;
 }
 
 product_node_t* product_node_create(int parent_id, matrix_t *m, vector_t *v){
@@ -33,8 +24,6 @@ product_node_t* product_node_create(int parent_id, matrix_t *m, vector_t *v){
     node->m = m;
     node->v = v;
     curr_size = vector_getLength(&v);
-
-    product_decompose(&node);
     return node;
 }
 
