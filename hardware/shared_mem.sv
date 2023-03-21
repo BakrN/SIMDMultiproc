@@ -23,7 +23,7 @@ module shared_mem #(parameter COUNT = 4,
     input [COUNT-1:0] i_req_rd , i_req_wr; 
     output [COUNT-1:0] o_grant_rd, o_grant_wr;  
     // mem info 
-    output logic [BUS_SIZE-1:0] o_proc_rd [COUNT-1:0];  
+    output logic [BUS_SIZE-1:0] o_proc_rd ;  
     input logic [BUS_SIZE-1:0] i_proc_wr [COUNT-1:0]; 
     input logic [2:0] i_wr_size [COUNT-1:0];  
     input addr_t i_proc_addr [COUNT-1:0];   // read addresses of all processors 
@@ -47,9 +47,7 @@ module shared_mem #(parameter COUNT = 4,
     .o_grant  ( o_grant_wr            )
     ); 
     assign wr_en = |o_grant_wr; 
-    always_comb begin 
-        o_proc_rd[enc_rd] = rd_data; 
-    end
+   
     assign wr_addr = i_proc_addr[enc_wr];  
     assign wr_size = i_wr_size[enc_wr];  
     assign rd_addr = i_proc_addr[enc_rd];  
@@ -60,7 +58,7 @@ module shared_mem #(parameter COUNT = 4,
     .i_wr_size               (  wr_size    ),
     .i_wr_en                 ( wr_en     ),
     .i_addr_r                ( rd_addr   ), 
-    .o_data                  ( rd_data   )
+    .o_data                  ( o_proc_rd   )
     );
     logic [$clog2(COUNT)-1:0] enc_wr ; 
     encoder #(.WIDTH ( COUNT ))

@@ -3,15 +3,18 @@
 
 
 `define PROC_COUNT  4
-`define UNIT_SIZE   4 // int32
+`define UNIT_SIZE   4 // int32 
+`define MEM_SIZE 4096
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
 typedef logic[3:0] cmd_id_t; 
 
 typedef struct packed{   
-        cmd_id_t         cmd_id; 
-        logic [$clog2(`PROC_COUNT)-1:0] proc_id ;  
+        cmd_id_t         key; 
+        logic            val;  
 } entry_t ; // Entries for scoreboard
+
+
 
 // OPCODES: add , mul , ld  , set info , write , sub 
 typedef enum logic {INSTR_LD, INSTR_INFO} opcode_t; 
@@ -24,7 +27,6 @@ typedef struct packed {
 } instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
 typedef struct packed{ 
-        logic [3:0] id ;
         opcode_t  opcode ; 
         instr_info_t payload;  // For instr info: 19 is for size , op (add mul or sun), which to overwrite
 }instr_t;   // Instruction run on each proc

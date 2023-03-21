@@ -19,7 +19,7 @@ module pool(
     o_wr_size 
 ); 
 
-input instr_t i_instr   [`PROC_COUNT-1:0]; 
+input instr_t i_instr   ; 
 input i_clk   ; 
 input i_rstn   ; 
 input [127:0 ] i_data ; 
@@ -40,7 +40,7 @@ genvar i ;
 generate
  for (i = 0 ; i < `PROC_COUNT ; i = i + 1)  begin 
         proc  u_proc (
-    .i_instr                 (              i_instr             [i]  ),
+    .i_instr                 (              i_instr              ),
     .i_clk                   (              i_clk                 ),
     .i_rstn                  (              i_rstn                ),
     .i_en                    (              i_en                 [i] ),

@@ -18,7 +18,7 @@ int TEST_NO = 0 ;
   $display("Key   Value   Valid") ; \
   for (integer i = 0 ; i < `PROC_COUNT; i ++) begin \
   t= inst.map[i]; \
-  $display("%d      %d       %b", t.cmd_id, t.proc_id, inst.valid_table[i]) ;  \ 
+  $display("%d      %d       %b", t.key, t.val, inst.valid_table[i]) ;  \ 
   end \
   end
 
@@ -35,16 +35,17 @@ logic i_read;
 logic [$clog2(`PROC_COUNT)-1:0] o_id;
 logic o_exists;
 logic o_ack  ; 
+logic  o_val  ; 
 scoreboard  u_scoreboard (
-    .i_clk                      ( i_clk                       ),
-    .i_rstn                     ( i_rstn                      ),
-    .i_entry                    ( i_entry                     ), 
-    .i_write                    ( i_write                     ),
-    .i_flush                    ( i_flush                     ),
-    .i_read                     ( i_read                      ),
-    .o_id                       (  o_id                       ),
-    .o_ack                      (  o_ack                      ) , 
-    .o_exists                   ( o_exists                    )
+    .i_clk                      (   i_clk      ),
+    .i_rstn                     (   i_rstn     ),
+    .i_entry                    (   i_entry    ), 
+    .i_write                    (   i_write    ),
+    .i_flush                    (   i_flush    ),
+    .i_read                     (   i_read     ),
+    .o_val                      (    o_val     ),
+    .o_ack                      (    o_ack     ) , 
+    .o_exists                   (   o_exists   )
 ); 
 // starting initializations
  
@@ -58,27 +59,27 @@ initial begin
 end
 initial begin 
     i_rstn = 1;
-    i_entry.cmd_id = 1 ; 
-    i_entry.proc_id = 3;  
+    i_entry.key = 1 ; 
+    i_entry.val = 3;  
     i_write = 0; 
     i_flush = 0;
     i_read = 0; 
     // seting up for testing
     for (integer i = 0 ; i < 4; i++) begin
         entry_t t ; 
-        t.cmd_id = i ; 
-        t.proc_id = i+1 ; 
+        t.key = i ; 
+        t.val = i+1 ; 
         u_scoreboard.map[i] =  t ; 
     end 
     u_scoreboard.valid_table = 4'hF; 
 end
 // Dumping out waveform 
 initial begin 
-    $dumpfile("test.vcd");
+    $dumpfile("sim/scoreboard.vcd");
     $dumpvars(0, u_scoreboard);
 end
 
-// Testing the scoreboard
+// * PASSED 
 initial begin 
     #T ; 
     /* ---------------------- Dump out scoreboard contents ---------------------- */
@@ -86,7 +87,7 @@ initial begin
     /* ------------------------------- Test Reads ------------------------------- */ 
     // test read entries
     for (integer i = 0 ; i < `PROC_COUNT; i=i+1) begin 
-      i_entry.cmd_id = i ;  
+      i_entry.key = i ;  
       i_read = 1;
       #T ;
       // should read 2  
@@ -94,7 +95,7 @@ initial begin
         #(T/2);  
       end 
 
-      `assert_equals(o_id , (i_entry.cmd_id + 1) % `PROC_COUNT, "Incorrect value for key")  ; 
+      `assert_equals(o_id , (i_entry.key + 1) % `PROC_COUNT, "Incorrect value for key")  ; 
       `assert_equals(o_exists, 1, "Key ddoesn't exist.")  ; 
       i_rstn = 0 ; 
       i_read = 0 ; 
@@ -105,8 +106,8 @@ initial begin
     u_scoreboard.valid_table = 4'd0 ;  // flush
     /* ----------------------------- Testing Writes ----------------------------- */
     // Write keys 4 
-    i_entry.cmd_id = 4; 
-    i_entry.proc_id = 1; 
+    i_entry.key = 4; 
+    i_entry.val = 1; 
     
     i_write = 1 ;
     #T ; 
@@ -116,8 +117,8 @@ initial begin
     end 
     #T ; 
     // write 6 
-    i_entry.cmd_id = 6; 
-    i_entry.proc_id = 2; 
+    i_entry.key = 6; 
+    i_entry.val = 2; 
     i_write = 1 ;
     #T ; 
     i_write = 0 ; 
@@ -126,8 +127,8 @@ initial begin
     end 
     #T ; 
     // write 8 
-    i_entry.cmd_id = 8; 
-    i_entry.proc_id = 3; 
+    i_entry.key = 8; 
+    i_entry.val = 3; 
     i_write = 1 ;
     #T ; 
     i_write = 0 ; 
@@ -137,7 +138,7 @@ initial begin
     #(2*T) ; 
 
     /* ----------------------- Testing reads after writes ----------------------- */
-    i_entry.cmd_id = 8 ; 
+    i_entry.key = 8 ; 
     `dump_scoreboard(u_scoreboard) 
     // test read 8 
     i_read = 1; 
@@ -150,9 +151,17 @@ initial begin
     `assert_equals(o_exists,1 , "test") ; 
 
     /* ------------------------------ Testing flush ----------------------------- */
+    // flushing key 8 
+    #T ; 
+    i_flush =1 ; 
+    #T ; 
+    i_flush = 0 ; 
+    while (!o_ack) begin 
+      #(T/2); 
+    end
+    `dump_scoreboard(u_scoreboard) 
 
 
-    /* ----------------------------- Testing Writes ----------------------------- */
   
 
     $finish ; 

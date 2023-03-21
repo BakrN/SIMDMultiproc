@@ -1,11 +1,11 @@
 `include "defines.sv"
-module mem #(parameter DEPTH = 4096, SIZE = 32 , BLOCK_SIZE=4)( // Fetch = how many elements of data to fetch at once
+module mem #(parameter DEPTH = `MEM_SIZE, SIZE = 32 , BLOCK_SIZE=4, ADDR_SIZE= $bits(addr_t))( // Fetch = how many elements of data to fetch at once
     input i_clk,
-    input addr_t i_addr_w,
+    input [ADDR_SIZE-1:0] i_addr_w,
     input [SIZE-1:0] [BLOCK_SIZE-1:0] i_data_w, 
-    input [$clog2(BLOCK_SIZE)-1:0] i_wr_size,  // write block size
+    input [$clog2(BLOCK_SIZE):0] i_wr_size,  // write block size
     input i_wr_en,
-    input addr_t i_addr_r, 
+    input [ADDR_SIZE-1:0] i_addr_r, 
     output wire  [SIZE-1:0] [BLOCK_SIZE-1:0] o_data /// contiguos block of mem
 );
 

@@ -7,6 +7,8 @@
 `include "scoreboard.sv"
 `include "defines.sv"
 `include "find_first_set_bit.sv"
+`include "fifo.sv"
+`include "mem.sv"
 
 module issuer ( 
     i_clk, 
@@ -15,8 +17,7 @@ module issuer (
     i_ack_proc , 
     // fifo ports
     i_cmd ,
-    o_rd_queue , 
-    o_wr_queue , 
+    o_rd_queue ,  
     o_cmd,
     // Proc ports
     i_finish_proc, 
@@ -38,7 +39,6 @@ output instr_t o_instr;
 // fifo ports 
 input cmd_t i_cmd ; 
 output logic o_rd_queue ;
-output logic o_wr_queue ;
 output cmd_t o_cmd ; // fifo 
 // State machine 
 // setup simd array  
@@ -51,10 +51,11 @@ localparam WAIT_ACK = 5 ;
 // fetching and processing from queue and checking with scoreboard 
 localparam CMD_GET = 7 ; 
 localparam CMD_CHECK = 8 ; // check with scoreboard
-localparam CMD_WRITEBACK = 9 ; // writeback to cmd_queue if there's a dependency in scoreboard
+localparam CMD_WRITEBACK = 9 ; // (put back in fifo)
+
 // PROC_FINISH
 
-localparam PROC_FINISH = 10 ; 
+localparam PROC_FINISH = 10 ; // Flush cmd from enq_cmd map 
 localparam SEND_ACK   = 11 ; // send ack to proc out of find_first_set_bit 
  
 logic [3:0] state ; 
@@ -66,7 +67,6 @@ cmd_t next_cmd ;  // next command to execute
 always_ff @(posedge i_clk or negedge i_rstn) begin 
     if (!i_rstn) begin 
         state <= IDLE ;  
-        map_flush <= 0;  
 
     end 
     else begin 
@@ -80,11 +80,8 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end
                 else if (~&i_busy_proc) begin  
                     // pop last cmd from fifo
-                    map_flush <= 0;  
                     state <=  CMD_GET; 
-                end else begin 
-                    map_flush <= 0;  
-                end
+                end  
             end
             PROC_FINISH: begin  
                 if (map_ack && i_finish_proc[finish_bit_pos]) begin 
@@ -114,7 +111,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 state <= WAIT_ACK; 
             end
             WAIT_ACK: begin 
-                if (i_ack_queue || i_ack_proc[selected_proc]&simd_op) begin  //  ! This line causes errors if i_ack_queue was active when the signal to be read should've been i_ack_proc. (COULD do away with the whole ack system of proc ?) 
+                if (i_ack_queue || i_ack_proc[selected_proc]&simd_op) begin  
                     state <= next_state; 
                     simd_op <= 0 ; 
                 end
@@ -161,7 +158,7 @@ always_latch begin
             next_state = IDLE; 
         end  
         CMD_WRITEBACK: begin 
-            next_state = IDLE; // ! Could get stuck here if 1 command in queue which has a dependency in SB 
+            next_state = IDLE; 
         end 
 
         
@@ -170,9 +167,9 @@ always_latch begin
     endcase 
 end   
 /* ------------------- Logic For Instruction Generetation ------------------- */ 
-assign  o_instr = (state == SIMD_LD1) ? { next_cmd.id, INSTR_LD, next_cmd.addr_0 } 
-             : (state == SIMD_LD2) ? { next_cmd.id,   INSTR_LD, next_cmd.addr_1 }
-             : (state == SIMD_INFO) ? { next_cmd.id, INSTR_INFO, { next_cmd.count, next_cmd.op, next_cmd.wr_addr } }
+assign  o_instr = (state == SIMD_LD1) ? {  INSTR_LD, next_cmd.addr_0 } 
+             : (state == SIMD_LD2) ?    {  INSTR_LD, next_cmd.addr_1 }
+             : (state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.count, next_cmd.op, next_cmd.wr_addr } }
              : 0;
 
 /* ---------------------------- Priority find_first_set_bit for finished signals ---------------------------- */
@@ -192,34 +189,82 @@ find_first_set_bit #(`PROC_COUNT) free_proc_finder(
 // scoreboard ports 
 entry_t map_entry;
 logic   map_write; 
-logic   map_flush;
-logic   map_flush_val;
 logic   map_read;
 logic   map_exists ;
 logic   map_ack ;
 //assign map_entry.cmd_id  = (map_write) ?next_cmd.id :next_cmd.dep  ;// Read dep and write id 
-assign map_entry.cmd_id  = map_write ?next_cmd.id : next_cmd.dep ;// Read dep and write id  
-assign map_entry.proc_id = map_write ? selected_proc: finish_bit_pos;
+assign map_entry.key  = map_write ?next_cmd.id : next_cmd.dep ;// Read dep and write id  
+assign map_entry.val = 0; // * Value doesn't matter 
+assign map_read =      (state == CMD_CHECK) ? 1 : 0 ; 
+assign map_write =      (state == SIMD_SELECT) ? 1 : 0 ;
 
-scoreboard  u_scoreboard (
+scoreboard  u_enq_cmds (
     .i_clk                      ( i_clk                       ),
     .i_rstn                     ( i_rstn                      ),
     .i_entry                    ( map_entry                   ), 
     .i_write                    ( map_write                   ),
-    .i_flush                    ( map_flush                   ),
-    .i_flush_val                ( map_flush_val               ), 
     .i_read                     ( map_read                    ),
     .o_ack                      ( map_ack                     ), 
     .o_exists                   ( map_exists                  )
 );  
+/* ------------------------ FIFO of next commands tbe ----------------------- */
+// Next commands fifo -> NCF 
+// Inputs
+logic ncf_read;
+logic ncf_in_select ; 
+// Outputs
+cmd_t ncf_cmd_out, ncf_cmd_in; 
+logic ncf_full;
+logic ncf_empty;
+logic ncf_select ;  // 1 for queue write , 0 for writeback from issuer
 
-assign map_flush_val = (state==PROC_FINISH); 
-assign map_read =      (state == CMD_CHECK) ? 1 : 0 ; 
-assign map_write =      (state == SIMD_SELECT) ? 1 : 0 ;
-assign o_rd_queue = (state == CMD_GET) ? 1 : 0; 
-assign o_wr_queue = (state == CMD_WRITEBACK) ? 1 : 0; 
+assign ncf_read  = (state==CMD_GET) ? 1 : 0 ; 
+assign ncf_write = ncf_empty ;  
+assign ncf_select = (state==CMD_WRITEBACK) ? 0 : 1 ; 
 
+fifo #(
+    .WIDTH ( $bits(cmd_t)),
+    .DEPTH ( `PROC_COUNT  ))
+ u_next_cmds (
+    .i_clk                     (        i_clk           ),       
+    .i_rstn                    (        i_rstn          ),       
+    .i_read                    (        ncf_read        ),       
+    .i_write                   (        ncf_empty       ),        
+    .i_data                    (        ncf_cmd_in      ),       
+    .o_data                    (        ncf_cmd_out     ),       
+    .o_fifo_full               (        ncf_full        ),       
+    .o_fifo_empty              (        ncf_empty       )        
+);
+
+
+/* --------------------- Processor Execute Table. Contains running command ids -------------------- */
+/* Processor execute table -> PET */ 
+// mem Inputs
+logic [$clog2(`PROC_COUNT)-1:0] pet_addr_w;
+logic [$clog2(`PROC_COUNT)-1:0] pet_addr_r; 
+
+cmd_id_t      pet_data_w;
+logic pet_wr_en ;
+// mem Outputs
+cmd_id_t pet_cmd_data;
+assign pet_addr_r = finish_bit_pos;  
+assign pet_addr_w = selected_proc ; 
+
+mem#(.DEPTH(`PROC_COUNT) , .SIZE($bits(cmd_id_t)) , .BLOCK_SIZE(1) , .ADDR_SIZE($clog2(`PROC_COUNT)))  u_mem (
+    
+    .i_clk                   ( i_clk     ),
+    .i_addr_w                ( pet_addr_w),
+    .i_data_w                ( pet_data_w),
+    .i_wr_size               ( 1'b1      ),
+    .i_wr_en                 ( pet_wr_en ),
+    .i_addr_r                ( pet_addr_r),
+    .o_data                  ( pet_cmd_data) 
+);
+
+
+assign o_rd_queue = ncf_write & ncf_select; 
 assign o_ack_proc = (state==SEND_ACK || (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO)) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
 assign o_en_proc = (state==SIMD_SELECT && i_busy_proc[selected_proc]==0) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
+
 
 endmodule   
