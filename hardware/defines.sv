@@ -3,16 +3,19 @@
 
 
 `define PROC_COUNT  4
-`define UNIT_SIZE   4 // int32 
-`define MEM_SIZE 4096
+`define UNIT_SIZE   4          // int32 
+`define MAX_CMDS `PROC_COUNT*2 // Maximum amount of commands that could be stored in CAM 
+
+
+`define MEM_SIZE 4096 
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
 typedef logic[3:0] cmd_id_t; 
 
 typedef struct packed{   
-        cmd_id_t         key; 
-        logic            val;  
-} entry_t ; // Entries for scoreboard
+        cmd_id_t         cmd_id; 
+        logic[$clog2(`PROC_COUNT)-1:0]            proc_id;  
+} entry_t ; // Entries for cam
 
 
 
@@ -32,16 +35,26 @@ typedef struct packed{
 }instr_t;   // Instruction run on each proc
  
 
-
-typedef struct packed{ 
-        cmd_id_t id ; // cmd id 
-        cmd_id_t dep; // dependency id
+typedef struct packed{
         addr_t addr_0;    
         addr_t addr_1;
         logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;// size of operation (how many elements) 
         logic [1:0]  op ; // add mul sub    
         logic wr_addr ;  // result writeback_addr. 0 for addr_0 , 1 for addr_1 
+} cmd_info_t ;
+typedef struct packed{ 
+        cmd_id_t   id ; // cmd id 
+        cmd_id_t   dep; // dependency id
+        cmd_info_t info ; 
 
 } cmd_t; // commands enqueued by controller   
+
+// Dependent cmd waiting for thing to finish , exec_cam
+
+typedef struct packed { 
+      cmd_id_t id ; 
+      logic [$clog2(`MAX_CMDS)-1:0] addr ; // address in cam 
+} dep_cmd_t ; 
+
 
 `endif 
