@@ -5,7 +5,18 @@ typedef struct product_node product_node_t;
 
 typedef struct product product_t;
 
-product_t* product_create(matrix_t *m, vector_t *v);
+struct product_node {
+    product_node_t *p0, *p1, *p2, *p3, *p4, *p5;
+    int parent_id;
+    matrix_t *m;
+    vector_t *v;
+};
+
+struct product{
+    product_node_t *head;
+};
+
+product_node_t* product_create(matrix_t *m, vector_t *v);
 
 product_node_t* product_node_create(int parent_id, matrix_t *m, vector_t *v);
 
