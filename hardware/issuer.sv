@@ -52,7 +52,7 @@ localparam WAIT_ACK = 5 ;
 // fetching and processing from queue and checking with scoreboard 
 localparam CMD_GET = 7 ; // get from queue or fifo
 localparam CMD_CHECK = 8 ; // check dep with scoreboard
-localparam CAM_UPDATE = 9; // insert cmd in cam 
+localparam CAM_WRITE = 9; // insert cmd in cam 
 localparam CMD_WRITEBACK = 10 ; // (put dependent cmd in fifo) 
 
 // PROC_FINISH
@@ -62,10 +62,13 @@ localparam SEND_ACK    = 12 ; // send ack to proc out of find_first_set_bit
  
 logic [3:0] state ; 
 logic [3:0] next_state ; 
-logic simd_op; 
 cmd_t next_cmd;  // next command to execute
+cmd_info_t next_cmd_info ; 
+cmd_id_t current_cmd_id ,current_dep_id; 
 logic cmd_source; // 0: queue , 1:fifo
-assign next_cmd = (cmd_source) ? dep_dout : 
+
+assign next_cmd = {current_cmd_id, current_dep_id, next_cmd_info}; 
+
 // Current state update logic 
 always_ff @(posedge i_clk or negedge i_rstn) begin 
     if (!i_rstn) begin 
@@ -84,6 +87,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     finish_bit_pos <= finished_proc; 
                     cmd_source <= 1 ; // check fifo
                     dep_counter <= dep_count; 
+                    cam_matched_addr <= cam_match_addr ;
                 end
                 
                 else if (~&i_busy_proc) begin  
@@ -100,8 +104,8 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     
                 end  
             end
-            PROC_FINISH: begin  
-                if (map_ack && i_finish_proc[finish_bit_pos]) begin 
+            PROC_FINISH: begin  // wait for cam entry to be deleted 
+                if (!cam_write_busy) begin 
                     state <= SEND_ACK;  
                 end 
                      
@@ -110,52 +114,47 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 state <= IDLE; 
             end 
             CMD_GET: begin 
-                if (ncf_empty)begin 
-                    state <= IDLE ; 
-                end
-                else begin
-                    state    <= CMD_CHECK;
-                end
-            end
-            CMD_CHECK: begin // cycle to find if there is a match or not 
-                cam_matched <= cam_match ; 
-                cam_matched_addr <= match_addr ; 
-                state <= CMD_UPDATE ; 
-                selected_proc <= free_proc;
-                if (!cam_match) begin 
-                    state <= SIMD_SELECT;   
+                if (cmd_source) begin// fifo
+                    current_cmd_id <= dep_dout.id ; 
+                    current_dep_id <= dep_dout.dep; 
                     
                 end else begin 
-                    state <= CMD_WRITEBACK;
+                    {current_cmd_id , current_dep_id ,next_cmd_info} <= i_cmd; 
                 end
+                state <= CMD_CHECK;
+            end
+            CMD_CHECK: begin // cycle to find if there is a match or not 
+                // If matched then compare it with selected finish_bit_pos
+                cam_matched <= cam_match ; 
+                cam_matched_addr <= match_addr ; 
+                state <= CAM_WRITE ; 
+                selected_proc <= free_proc;
+            
                 end
             end
-            CMD_UPDATE : begin  // write to cam 
-                if (!cam_matched) begin 
-                    if (!cmd_source) begin
-                        // write to cam 
-                        state <= CMD_WRITEBACK
-                    end
+            CAM_WRITE : begin  // adds new entry to cam if no match (source0) if source is 1 and no match then we overwrite the entry 
+                if (cam_matched) begin 
+                    state <= CMD_WRITEBACK; 
                 end
                 else begin 
                     if (!write_busy) begin 
                         // finished write and now can move on to simd_select
                         // can write to cam
+                        next_cmd_info <= buf_mem[buf_addr_r][ADDR_WDITH-1:0] ; 
                         state <= SIMD_SELECT; 
                     end
                 end
             end
-            CMD_WRITEBACK: begin 
-                state <= WAIT_ACK; 
+            CMD_WRITEBACK: begin // writeback to fifo
+                state <= IDLE; 
             end
             WAIT_ACK: begin 
-                if (i_ack_queue || i_ack_proc[selected_proc]&simd_op) begin  
+                if (i_ack_proc[selected_proc]) begin  
                     state <= next_state; 
-                    simd_op <= 0 ; 
                 end
             end
 
-            SIMD_SELECT: begin  // Write CMD to scoreboard
+            SIMD_SELECT: begin  // Write CMD to cam
                 if (i_busy_proc[selected_proc] == 0 && map_ack) begin 
                     state <= SIMD_LD1 ; 
                 end
@@ -166,15 +165,12 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end  
             SIMD_LD1: begin  
                 state <= WAIT_ACK;  
-                 simd_op <= 1 ; 
             end
             SIMD_LD2: begin 
                 state <= WAIT_ACK;
-                 simd_op <= 1 ;  
             end
             SIMD_INFO: begin 
                 state <= WAIT_ACK; 
-                simd_op <= 1 ; 
             end
             default: 
                 state <= IDLE; 
@@ -226,7 +222,6 @@ find_first_set_bit #(`PROC_COUNT) free_proc_finder(
 
 /* ---- FIFO with commands dependent on cmds still being executed on proc - dep--- */
 
-// fifo logic used in fsm 
 
 
 // fifo Inputs
@@ -238,7 +233,7 @@ logic dep_fifo_full;
 logic dep_fifo_empty;
 logic [$clog2(FIFO_DEPTH)-1:0] dep_counter, dep_count ;
 localparam FIFO_WIDTH = $bits(dep_din); 
-localparam FIFO_DEPTH  = `MAX_CMDS; // change this later test with this later 
+localparam FIFO_DEPTH  = `MAX_CMDS; // * Try decreasing the size and stall for instruction to finish on proce
 
 fifo #( 
     .WIDTH ( FIFO_WIDTH),
@@ -255,7 +250,9 @@ fifo #(
     .o_count                   (    dep_count       )
 );
 // assignment 
-
+assign dep_din   = (current_cmd_id , current_dep_id); 
+assign dep_write = (state==CMD_WRITEBACK) ? 1 : 0 ; 
+assign dep_read  = (state==CMD_GET && cmd_source) ? 1 : 0 ; 
 
 /* ------------------------- CAM - CMD_ID , PROC_ID ------------------------- */
 
@@ -284,10 +281,11 @@ logic  [2**ADDR_WIDTH-1:0]  cam_match_single;
 logic  [ADDR_WIDTH-1:0]  cam_match_addr;
 logic  cam_match;
 // Cam Assignments
-assign cam_compare_data = {next_cmd.dep, finish_bit_pos}; 
+assign cam_compare_data = (state==CMD_CHECK) ? {next_cmd.dep, 0}: ((state==CAM_WRITE)?{next_cmd.id, 0} : {0, finished_proc} ); // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this
 assign cam_write_addr   = !cmd_source ? cam_counter : cam_matched_addr;  
-assign cam_write_data   = {next_cmd.id , selected_proc} 
-assign cam_write_enable = (state==CAM_UPDATE && (!cmd_source || (!cam_matched && cmd_source))) ? 1 : 0 ; 
+assign cam_write_data   = (state==PROC_FINISH) ? cam_matched_addr: {next_cmd.id , selected_proc} ;
+assign cam_write_enable = (state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source))) ? 1 : 0 ; 
+assign cam_write_delete = (state==PROC_FINISH) ? 1 : 0;  
 // Enable write in 2 cases 
 // Came from queue (regardless of cam_matched)
 // came from fifo (and found original ad) and no longer match
@@ -312,29 +310,49 @@ cam #(
     .match                   ( cam_match          )
 );
 
-// Storing payloads of cmds 
+// Storing payloads of cmds . Standard MEM 
+localparam buf_depth = 2**ADDR_WIDTH;
+localparam buf_width = $bits(cmd_info_t) 
 // mem Inputs
 logic [ADDR_WIDTH-1:0]  buf_addr_w;
-cmd_info_t buf_din;
-logic buf_wr_en;
-logic [ADDR_SIZE-1:0]  buf_addr_r;
+cmd_info_t              buf_din;
+logic                   buf_wr_en;
+logic [ADDR_WIDTH-1:0]  buf_addr_r;
 // mem Outputs
-cmd_info_t  buf_dout;
-mem#(.DEPTH(ADDR_WIDTH), .SIZE($bits(cmd_info_t)), .BLOCK_SIZE(1),ADDR_SIZE=$clog2(ADDR_WIDTH) )  u_cmd_info (
-    .i_clk                   ( i_clk       ),
-    .i_addr_w                ( buf_addr_w    ),
-    .i_data_w                ( buf_din       ),
-    .i_wr_size               ( 1'd1          ),
-    .i_wr_en                 ( buf_wr_en     ),
-    .i_addr_r                ( buf_addr_r    ),
-    .o_data                  ( buf_dout      )
-);
-assign buf_wr_en  = (state==CMD_WRITEBACK) ? 1 : 0 ;  // Store info if cmd is depenedent
+cmd_info_t              buf_dout;
+logic [buf_width:0] buf_mem [2**ADDR_WIDTH-1:0]; // with valid entry 
+logic  buf_clr_en , buf_valid_free; 
+assign buf_wr_en  = (state==CMD_WRITEBACK && !cam_source) ? 1 : 0 ;  // Store info if cmd is depenedent
 assign buf_addr_r = cam_match_addr ;
 assign buf_addr_w = cam_nxt_addr   ; 
+assign buf_dout   = buf_mem[cam_nxt_addr][ADDR_WIDTH-1:0] ; 
+assign buf_clr_en = (state==PROC_FINISH) ? 1 : 0 ; 
+assign buf_valid_free = ~buf_mem[cam_nxt_addr][ADDR_WDITH]; 
+assign buf_din = next_cmd_info ; 
+always_ff (@posedge i_clk or negedge i_rstn) begin  
+    if (!i_rstn) begin 
 
+    end else begin 
+        if (buf_wr_en) begin 
+            buf_mem[buf_addr_w]     = {1'b1, buf_din};
+        end
+        if (buf_clr_en) begin 
+            // clear matched address 
+            buf_mem[cam_matched_addr][ADDR_WIDTH]  = 0 ; 
+            cam_nxt_addr <= cam_matched_addr; 
+        end   
+        else begin 
+            if (buf_mem[cam_nxt_addr][ADDR_WIDTH]) begin 
+                if(cam_nxt_addr == depth_depth-1)  
+                    cam_nxt_addr <= 0 ; 
+                else 
+                    cam_nxt_addr <= cam_nxt_addr + 1; 
+            end
+        end
+    end
+end
 
-
+//assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET)? 1 :0; 
 assign o_ack_proc = (state==SEND_ACK || (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO)) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
 assign o_en_proc = (state==SIMD_SELECT && i_busy_proc[selected_proc]==0) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 

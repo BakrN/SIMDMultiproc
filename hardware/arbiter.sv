@@ -22,6 +22,8 @@ module arbiter #(
 
     logic should_service_next;
     // check for deassertions
+        // if current requester has de-asserted, move on to next one
+   
     logic [N_REQ-1:0] mask; 
     assign mask = o_grant & i_req; 
     always @(*) begin 
@@ -34,9 +36,7 @@ module arbiter #(
     end
     
 
-    // if current requester has de-asserted, move on to next one
-    
-   // assign should_service_next = i_ready & (~|(o_grant & i_req));
+ 
 
     // save the last grant so that it may be used by the arbitration algorithm
     always_ff @(posedge i_clk) begin : proc_last_ready

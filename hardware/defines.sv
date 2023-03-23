@@ -53,7 +53,7 @@ typedef struct packed{
 
 typedef struct packed { 
       cmd_id_t id ; 
-      logic [$clog2(`MAX_CMDS)-1:0] addr ; // address in cam 
+      cmd_id_t dep ; // dep id
 } dep_cmd_t ; 
 
 
