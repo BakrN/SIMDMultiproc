@@ -48,6 +48,9 @@ int main(){
     }
     index--;
 
+    printf("\n \033[0;33m ##### Recomposing  ##### \033[0m\n");
+
+
     while (index >= 0){
         product_recompose(&treeFlat[index]);
         index--;
