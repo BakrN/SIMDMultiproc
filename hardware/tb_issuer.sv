@@ -1,5 +1,7 @@
 `include "defines.sv"
 `include "issuer.sv"
+
+
 `define dump_scoreboard(inst) \
   begin \ 
   entry_t t;\
@@ -7,9 +9,11 @@
   $display("Key   Value   Valid") ; \
   for (integer i = 0 ; i < `PROC_COUNT; i ++) begin \
   t= inst.map[i]; \
-  $display("%d      %d       %b", t.cmd_id, t.proc_id, inst.valid_table[i]) ;  \ 
+  $display("%d      %b       %b", t.key, t.val, inst.valid_table[i]) ;  \ 
   end \
   end
+
+
 `define assert_equals(signal1, signal2, message) \
   if (signal1 !== signal2) begin \
     $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
@@ -20,38 +24,38 @@
 module issuer_tb; 
 parameter T = 10 ; 
 // issuer Inputs
+// issuer Inputs
 logic i_clk;
 logic i_rstn;
 logic i_ack_queue;
 logic [`PROC_COUNT-1:0]  i_busy_proc;
 logic [`PROC_COUNT-1:0]  i_finish_proc;
 logic [`PROC_COUNT-1:0]  i_ack_proc;
-logic [`PROC_COUNT-1:0]  o_en_proc;
-logic [`PROC_COUNT-1:0]  o_ack_proc;
 cmd_t i_cmd;
 
 // issuer Outputs
+logic [`PROC_COUNT-1:0] o_en_proc;
+logic [`PROC_COUNT-1:0] o_ack_proc;
 instr_t o_instr;
 logic o_rd_queue;
-logic o_wr_queue;
 cmd_t o_cmd;
 
 issuer  u_issuer (
-    .i_clk                   (     i_clk          ),
-    .i_rstn                  (     i_rstn         ),
-    .i_ack_queue             (     i_ack_queue    ), // need extra line for proc ack . Or maybe use the finished bus lines ? 
-    .i_ack_proc             (     i_ack_proc   ), 
-    .i_busy_proc             (     i_busy_proc    ),
-    .i_finish_proc           (     i_finish_proc  ),
-    .o_en_proc               (     o_en_proc      ),
-    .o_ack_proc              (     o_ack_proc     ),
-    .i_cmd                   (     i_cmd          ),
-    .o_instr                 (     o_instr        ),
-    .o_rd_queue              (     o_rd_queue     ),
-    .o_wr_queue              (     o_wr_queue     ),
-    .o_cmd                   (     o_cmd          )
+    .i_clk                 (     i_clk         ),
+    .i_rstn                (     i_rstn        ),
+    .i_ack_queue           (     i_ack_queue   ),
+    .i_busy_proc           (     i_busy_proc   ),
+    .i_finish_proc         (     i_finish_proc ),
+    .i_ack_proc            (     i_ack_proc    ),
+    .i_cmd                 (     i_cmd         ),
+    .o_en_proc             (     o_en_proc     ),
+    .o_ack_proc            (     o_ack_proc    ),
+    .o_instr               (     o_instr       ),
+    .o_rd_queue            (     o_rd_queue    ),
+    .o_cmd                 (     o_cmd         )
 );
-// clock isntantiation 
+cmd_t nxt_cmd ; 
+// clock isntantiation  
 initial begin 
     forever begin 
         i_clk = 0 ; 
@@ -61,7 +65,10 @@ initial begin
     end 
 end
 initial begin 
-    $dumpfile("sim/issuer.vcd");
+  nxt
+end
+initial begin 
+    $dumpfile("sim/tb_issuer.vcd");
     $dumpvars(0, u_issuer);
 end
 cmd_t new_cmd; 
@@ -94,7 +101,7 @@ initial begin
     `assert_equals (u_issuer.state, u_issuer.SIMD_SELECT, "Picking free SIMD") 
     `assert_equals (u_issuer.selected_proc, 2 , "only free proc")    
     #(3*T) ;
-    `dump_scoreboard(u_issuer.u_scoreboard)
+    `dump_scoreboard(u_issuer.u_enq_cmds) 
     i_busy_proc = 4'hF; 
     `assert_equals (u_issuer.state, u_issuer.SIMD_LD1, "LoadingSIMD1") #T; 
     `assert_equals (u_issuer.state, u_issuer.WAIT_ACK, "Waiting for proc confirmation of recieved data") #T ; 

@@ -13,7 +13,8 @@ module fifo #(
    i_data ,
    o_data ,
    o_fifo_full,
-   o_fifo_empty
+   o_fifo_empty, 
+   o_count 
   );
   
   input                      i_clk; 
@@ -30,20 +31,27 @@ module fifo #(
   logic [$clog2(DEPTH):0] readPtr, writePtr; // extra bit to check if full and no need to add reset logic
   logic [$clog2(DEPTH)-1:0] writeAddr = writePtr[$clog2(DEPTH)-1:0]; 
   logic [$clog2(DEPTH)-1:0] readAddr = readPtr[$clog2(DEPTH)-1:0];  
-  logic [$clog2(DEPTH)-1:0] count; 
+  output logic [$clog2(DEPTH)-1:0] o_count; 
 
   always_ff@(posedge i_clk or negedge i_rstn)begin
     if(~i_rstn)begin
       readPtr     <= '0;
       writePtr    <= '0;
+      o_count <= '0 ; 
     end
     else begin
       if(i_write && ~o_fifo_full) begin 
         memory[writeAddr] <= i_data; 
         writePtr         <= writePtr + 1;
+        if (!i_read) begin 
+          o_count <= o_count + 1 ;
+        end
       end
       if(i_read && ~o_fifo_empty) begin
         readPtr <= readPtr + 1;
+        if (!i_write && o_count) begin 
+          o_count <= o_count - 1 ; 
+        end
       end
     end
   end
