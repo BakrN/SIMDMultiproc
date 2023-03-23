@@ -46,6 +46,12 @@ int main(){
         nextFree += 3;
         index++;
     }
+    index--;
+
+    while (index >= 0){
+        product_recompose(&treeFlat[index]);
+        index--;
+    }
 
     
 
