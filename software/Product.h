@@ -24,4 +24,6 @@ product_t* product_set_head(product_t **product, product_node_t **pn);
 
 void product_decompose(product_node_t **pn);
 
+void product_recompose(product_node_t **pn);
+
 void product_node_print(product_node_t **pn, int * m_data, int * v_data);

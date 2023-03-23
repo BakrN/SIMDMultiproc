@@ -50,7 +50,17 @@ void solver_receive(command_t ** c){
         
     }
     if(command_getOpcode(c) == 2){ //TV multiplication
+        for (int i = -storeSize +1; i <= 0; i++){
+            printf("[%d]: ", store + i + storeSize -1);
+            int total = 0;
+            for (int index = 0; index < storeSize; index++){
+                printf("%d * %d \t", tbuffer[starts[0] + i + index],vbuffer[starts[1] + index]);
+                total += tbuffer[starts[0] + i + index] * vbuffer[starts[1] + index];
 
+            }
+            vbuffer[store + i + storeSize -1] = total;
+            printf("\n");    
+        }
     }
 
     printf("\n");
