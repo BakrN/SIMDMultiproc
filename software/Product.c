@@ -78,9 +78,9 @@ void product_decompose(product_node_t **pn){
 
 void product_recompose(product_node_t **pn){
     if ((*pn)->p0 != NULL && (*pn)->p1 != NULL && (*pn)->p2 != NULL){
-        command_create(1,0,0,vector_getDataStart(&(*pn)->p0->v),vector_getDataStart(&(*pn)->p1->v),-1,vector_getDataStart(&(*pn)->v),vector_getLength(&(*pn)->v));
+        command_create(1,0,0,vector_getDataStart(&(*pn)->p0->v),vector_getDataStart(&(*pn)->p1->v),-1,vector_getDataStart(&(*pn)->p0->v),vector_getLength(&(*pn)->p0->v));
         //Command 2 = P0 + P2
-        command_create(1,0,0,vector_getDataStart(&(*pn)->p1->v),vector_getDataStart(&(*pn)->p2->v),-1,vector_getDataStart(&(*pn)->v),vector_getLength(&(*pn)->v));
+        command_create(1,0,0,vector_getDataStart(&(*pn)->p1->v),vector_getDataStart(&(*pn)->p2->v),-1,vector_getDataStart(&(*pn)->p2->v),vector_getLength(&(*pn)->p1->v));
         //Command 3 = P1 + P2
     } else {
         //Command 1 = m.v (store in vector location)
