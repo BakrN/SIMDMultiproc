@@ -55,6 +55,11 @@ typedef struct packed {
       cmd_id_t id ; 
       cmd_id_t dep ; // dep id
 } dep_cmd_t ; 
-
+`define assert_equals(signal1, signal2, message) \
+  if (signal1 !== signal2) begin \
+    $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
+  end else begin \
+    $display("signal1: %d and signal2: %d were equal", signal1, signal2); \
+  end
 
 `endif 

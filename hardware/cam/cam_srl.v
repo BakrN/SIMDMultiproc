@@ -21,7 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-`include "priority_encoder.v"
+
 // Language: Verilog 2001
 
 `timescale 1ns / 1ps
@@ -66,9 +66,20 @@ localparam [1:0]
     STATE_DELETE = 2'd3;
 
 reg [1:0] state_reg = STATE_INIT, state_next;
-
-wire [SLICE_COUNT*SLICE_WIDTH-1:0] compare_data_padded = {{SLICE_COUNT*SLICE_WIDTH-DATA_WIDTH{1'b0}}, compare_data};
-wire [SLICE_COUNT*SLICE_WIDTH-1:0] write_data_padded = {{SLICE_COUNT*SLICE_WIDTH-DATA_WIDTH{1'b0}}, write_data};
+// * Bakr edit. To correctly be able to compare slices independentaly
+generate 
+for (genvar i = 0 ; i < SLICE_COUNT ; i = i +1) begin 
+    if (SLICE_WIDTH > DATA_WIDTH-i*SLICE_WIDTH) begin 
+        assign compare_data_padded[(SLICE_COUNT-i)*SLICE_WIDTH-1-: SLICE_WIDTH] = compare_data[DATA_WIDTH-i*SLICE_WIDTH-1:0]  ; 
+        assign write_data_padded[(SLICE_COUNT-i)*SLICE_WIDTH-1  -: SLICE_WIDTH]  =   write_data[DATA_WIDTH-i*SLICE_WIDTH-1:0] ; 
+    end else begin
+        assign compare_data_padded[(SLICE_COUNT-i)*SLICE_WIDTH-1 -: SLICE_WIDTH]= compare_data[DATA_WIDTH-i*SLICE_WIDTH-1-:SLICE_WIDTH] ; 
+        assign write_data_padded[(SLICE_COUNT-i)*SLICE_WIDTH-1   -: SLICE_WIDTH]  =   write_data[DATA_WIDTH-i*SLICE_WIDTH-1-:SLICE_WIDTH] ; 
+    end
+end
+endgenerate
+wire [SLICE_COUNT*SLICE_WIDTH-1:0] compare_data_padded ;//= {{SLICE_COUNT*SLICE_WIDTH-DATA_WIDTH{1'b0}}, compare_data};
+wire [SLICE_COUNT*SLICE_WIDTH-1:0] write_data_padded   ;//= {{SLICE_COUNT*SLICE_WIDTH-DATA_WIDTH{1'b0}}, write_data};
 
 reg [SLICE_WIDTH-1:0] count_reg = {SLICE_WIDTH{1'b1}}, count_next;
 
@@ -89,11 +100,12 @@ reg [RAM_DEPTH-1:0] match_many_reg = {RAM_DEPTH{1'b0}};
 assign match_many = match_many_reg;
 
 integer k;
-
+// ! Problem with 0 0 match entries. Have to start from 1 or more
 always @* begin
-    match_many_raw = ~shift_en;
+    match_many_raw = 0 ; // * Note: to prevent matching ot entry that is currently being written to 
     for (k = 0; k < SLICE_COUNT; k = k + 1) begin
-        match_many_raw = match_many_raw & match_raw_out[k];
+        // * Edited here to output a match only if 1 of the slices matched. 
+        match_many_raw = match_many_raw | (~shift_en & match_raw_out[k]); // * Note: this is to match slices
     end
 end
 

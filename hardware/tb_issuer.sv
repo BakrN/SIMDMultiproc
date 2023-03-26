@@ -14,46 +14,13 @@
   end
 
 
-`define assert_equals(signal1, signal2, message) \
-  if (signal1 !== signal2) begin \
-    $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
-  end else begin \
-    $display("signal1: %d and signal2: %d were equal", signal1, signal2); \
-  end
+
 
 module issuer_tb; 
 parameter T = 10 ; 
-// issuer Inputs
-// issuer Inputs
-logic i_clk;
-logic i_rstn;
-logic i_ack_queue;
-logic [`PROC_COUNT-1:0]  i_busy_proc;
-logic [`PROC_COUNT-1:0]  i_finish_proc;
-logic [`PROC_COUNT-1:0]  i_ack_proc;
-cmd_t i_cmd;
 
-// issuer Outputs
-logic [`PROC_COUNT-1:0] o_en_proc;
-logic [`PROC_COUNT-1:0] o_ack_proc;
-instr_t o_instr;
-logic o_rd_queue;
-cmd_t o_cmd;
 
-issuer  u_issuer (
-    .i_clk                 (     i_clk         ),
-    .i_rstn                (     i_rstn        ),
-    .i_ack_queue           (     i_ack_queue   ),
-    .i_busy_proc           (     i_busy_proc   ),
-    .i_finish_proc         (     i_finish_proc ),
-    .i_ack_proc            (     i_ack_proc    ),
-    .i_cmd                 (     i_cmd         ),
-    .o_en_proc             (     o_en_proc     ),
-    .o_ack_proc            (     o_ack_proc    ),
-    .o_instr               (     o_instr       ),
-    .o_rd_queue            (     o_rd_queue    ),
-    .o_cmd                 (     o_cmd         )
-);
+
 cmd_t nxt_cmd ; 
 // clock isntantiation  
 initial begin 
