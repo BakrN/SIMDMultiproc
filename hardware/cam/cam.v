@@ -21,8 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 */
-`include "cam_bram.v" 
-`include "cam_srl.v" 
+
 // Language: Verilog 2001
 
 `timescale 1ns / 1ps

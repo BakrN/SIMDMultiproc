@@ -5,7 +5,8 @@
     Setup:
         LD reg1 addr
         LD reg2 addr 
-        SET (info) #size , which to overwrite , last_overwrites size (if it's less than 4 then add 0 or mul 1dependending on overwrite)  
+        SET (info) 
+        STORE writeback addr 
     Exec: 
         REQ access 
         Fetch reg1  
@@ -39,10 +40,11 @@ module proc(
     localparam LD2       = 4'd2;  
     localparam SET_INFO  = 4'd3 ;
     // FSM process           
-    localparam FETCH1    = 4'd4;  
-    localparam FETCH2    = 4'd5;  
-    localparam WRITE     = 4'd6;  
-    localparam FINISHED  = 4'd7;  
+    localparam STORE     = 4'd4;  
+    localparam FETCH1    = 4'd5;  
+    localparam FETCH2    = 4'd6;  
+    localparam WRITE     = 4'd7;  
+    localparam FINISHED  = 4'd8;  
 /* -------------------------------- IO Ports -------------------------------- */
     input  instr_t i_instr; 
     input i_clk  ; 
@@ -65,7 +67,7 @@ module proc(
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
 logic [3:0] state ;   
-addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1   ;  
+addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1  , wr_addr ;   
 cmd_id_t r_id ;  
 logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
@@ -123,7 +125,7 @@ end
             end
             SET_INFO: begin 
                 if (i_instr.opcode == INSTR_INFO && i_valid) begin  
-                    state <= FETCH1;    
+                    state <= STORE;    
                     instr_info <= i_instr.payload; 
                     o_ack <= 1 ;  
                 end
@@ -132,6 +134,16 @@ end
                     state <= SET_INFO;
                 end
             end 
+            STORE: begin 
+                if(i_instr.opcode == INSTR_STORE && i_valid) begin 
+                    state <= FETCH1 ; 
+                    wr_addr <= i_instr.payload; 
+                    o_ack <= 1 ; 
+                end else begin 
+                    o_ack <= 0 ; 
+                    state <= STORE; 
+                end
+            end
             // FSM Process 
             FETCH1: begin 
                 if(i_grant_rd) begin 
@@ -178,7 +190,7 @@ end
     end
 
 
-    assign o_addr   =  (state==FETCH2) ? addr_1 : addr_0 ; 
+    assign o_addr   =  wr_addr; 
     assign o_req_rd =  ((state==FETCH1)|| (state==FETCH2) ) ? 1 : 0 ;  
     assign o_req_wr =  (state==WRITE) ? 1 : 0 ; 
     assign o_busy   =  (state==IDLE) ? 0 : 1 ;  

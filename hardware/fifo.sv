@@ -29,8 +29,10 @@ module fifo #(
 
   logic [WIDTH-1:0] memory [DEPTH-1:0];
   logic [$clog2(DEPTH):0] readPtr, writePtr; // extra bit to check if full and no need to add reset logic
-  logic [$clog2(DEPTH)-1:0] writeAddr = writePtr[$clog2(DEPTH)-1:0]; 
-  logic [$clog2(DEPTH)-1:0] readAddr = readPtr[$clog2(DEPTH)-1:0];  
+  logic [$clog2(DEPTH)-1:0] writeAddr ; 
+  assign writeAddr = writePtr[$clog2(DEPTH)-1:0]; 
+  logic [$clog2(DEPTH)-1:0] readAddr  ; 
+  assign readAddr = readPtr[$clog2(DEPTH)-1:0];  
   output logic [$clog2(DEPTH)-1:0] o_count; 
 
   always_ff@(posedge i_clk or negedge i_rstn)begin
