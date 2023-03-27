@@ -41,7 +41,7 @@ logic [DATA_WIDTH-1:0]  write_data;
 logic write_delete;
 logic write_enable;
 logic [DATA_WIDTH-1:0]  compare_data;
-
+logic [1:0] select_mask ; 
 // cam Outputs
 logic write_busy;
 logic [2**ADDR_WIDTH-1:0]  match_many;
@@ -61,6 +61,7 @@ cam #(
     .write_data              ( write_data     ),
     .write_delete            ( write_delete   ),
     .write_enable            ( write_enable   ),
+    .select_mask             ( select_mask    ),
     .compare_data            ( compare_data   ),
     .write_busy              ( write_busy     ),
     .match_many              ( match_many     ),
@@ -81,10 +82,10 @@ initial begin
         #(T/2) ;  
     end           
     rst = 0 ; 
-    write_enable = 0 ; 
-    write_delete = 0 ; 
-    write_addr = 0 ;  
-    compare_data = 0 ;
+    
+    
+    
+    
 end
 cmd_id_t cmd_id ; 
 logic [$clog2(`PROC_COUNT)-1:0] proc_id; 
@@ -92,11 +93,12 @@ initial begin
     #T; 
     rst = 1; 
     #T; 
-    rst = 0; 
-    write_addr = 0 ; 
-    cmd_id = 1; 
-    proc_id = 2 ;
-    // Problem with 0 , 0 
+   write_enable = 0 ;  rst = 0;  
+   write_delete = 0 ;  write_addr = 0 ; 
+   write_addr = 0 ;    cmd_id = 1; 
+   compare_data = 0 ;  proc_id = 2 ;
+   select_mask = 2'b11 ; 
+    // Problem with 0 , 0  
     #(20*T);
     // Check for matches 
     `assert_equals(match , 0 , "Nothing written to cam, so there should be no match" )
@@ -116,19 +118,22 @@ initial begin
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
     `assert_equals(match , 1 , "Searching with cmd_id and proc_id" )
+    select_mask = 2'b01 ; 
     compare_data = {cmd_id ,2'd3}; 
     #T ; 
     $display("%b", match_many) ;  
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
-    `assert_equals(match , 1 , "Searching with correct cmd_id and incorrect proc_id" )
+    `assert_equals(match , 0 , "Searching with correct cmd_id and incorrect proc_id but mask is off for cmd_id" )
     compare_data = {4'd11, proc_id}; 
+    select_mask = 2'b01; 
     #T; 
     $display("%b", match_many) ;  
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
     `assert_equals(match , 1 , "Searching with correct proc_id and incorrect cmd_id" )
-    compare_data ={2'd0, proc_id, 2'd0  };  
+    compare_data ={cmd_id, proc_id };  
+    select_mask = 2'b00  ; 
     #T ; 
     $display("%b", match_many) ;  
     $display("%b", match_single) ; 

@@ -1,3 +1,5 @@
+// edited by abubakr
+
 /*
 
 Copyright (c) 2015-2016 Alex Forencich
@@ -47,6 +49,7 @@ module cam #(
     input  wire [DATA_WIDTH-1:0]    write_data,
     input  wire                     write_delete,
     input  wire                     write_enable,
+    input wire [((DATA_WIDTH + SLICE_WIDTH - 1) / SLICE_WIDTH)-1:0]    select_mask , 
     output wire                     write_busy,
 
     input  wire [DATA_WIDTH-1:0]    compare_data,
@@ -70,27 +73,8 @@ generate
             .write_data(write_data),
             .write_delete(write_delete),
             .write_enable(write_enable),
-            .write_busy(write_busy),
-            .compare_data(compare_data),
-            .match_many(match_many),
-            .match_single(match_single),
-            .match_addr(match_addr),
-            .match(match)
-        );
-    end else if (CAM_STYLE == "BRAM") begin
-        cam_bram #(
-            .DATA_WIDTH(DATA_WIDTH),
-            .ADDR_WIDTH(ADDR_WIDTH),
-            .SLICE_WIDTH(SLICE_WIDTH)
-        )
-        cam_inst (
-            .clk(clk),
-            .rst(rst),
-            .write_addr(write_addr),
-            .write_data(write_data),
-            .write_delete(write_delete),
-            .write_enable(write_enable),
-            .write_busy(write_busy),
+            .write_busy(write_busy), 
+            .select_mask(select_mask), 
             .compare_data(compare_data),
             .match_many(match_many),
             .match_single(match_single),

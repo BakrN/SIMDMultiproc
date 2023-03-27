@@ -316,13 +316,16 @@ logic  [2**ADDR_WIDTH-1:0]  cam_match_many;
 logic  [2**ADDR_WIDTH-1:0]  cam_match_single;
 logic  [ADDR_WIDTH-1:0]  cam_match_addr;
 logic cam_match;
-// Cam Assignments
-assign cam_compare_data = (state==CMD_CHECK) ? {next_cmd.dep, {$clog2(`PROC_COUNT){1'b1}}}: ((state==CAM_WRITE)?{next_cmd.id, {$clog2(`PROC_COUNT){1'b0}}} : {{$bits(cmd_id_t){1'b0}}, finished_proc} ); // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this 
+logic [1:0]  select_mask ; 
+// Cam Assignments 
+
+assign cam_compare_data = (state==CMD_CHECK) ? {next_cmd.dep, {$clog2(`PROC_COUNT){1'b0}}}: ((state==CAM_WRITE)?{next_cmd.id, {$clog2(`PROC_COUNT){1'b0}}} : {{$bits(cmd_id_t){1'b0}}, finished_proc} ); // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this 
 // TODO:  After some testing, we need to add a slice selector to the cam. (to choose if our matching algorithm should be based on command only , proc only or both) (very important)
-assign cam_write_addr   = ( state==PROC_FINISH||cmd_source) ? cam_matched_addr: cam_counter;  // ! Should redefine cam_nxt_addr. For now (test) this will be set to cam_counter
+assign cam_write_addr   = ( state==PROC_FINISH||cmd_source) ? cam_matched_addr : cam_counter;  // ! Should redefine cam_nxt_addr. For now (test) this will be set to cam_counter
 assign cam_write_data   = {next_cmd.id , selected_proc} ;
 assign cam_write_enable = (((state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source)) )||cam_write_delete) && cycle_delay) ? 1 : 0 ;  
 assign cam_write_delete = (state==PROC_FINISH && cycle_delay) ? 1 : 0;  
+assign select_mask = (state == CMD_CHECK || state==CAM_WRITE)  ? 2'b10 : 2'b01; // * search for proc id when it's finished, otherwise just look at cmd_id 
 // Enable write in 2 cases 
 // Came from queue (regardless of cam_matched)
 // came from fifo (and found original ad) and no longer match
@@ -339,6 +342,7 @@ cam #(
     .write_data              ( cam_write_data     ),
     .write_delete            ( cam_write_delete   ),
     .write_enable            ( cam_write_enable   ),
+    .select_mask             (select_mask) , 
     .compare_data            ( cam_compare_data   ),
     .write_busy              ( cam_write_busy     ),
     .match_many              ( cam_match_many     ),
@@ -356,35 +360,49 @@ logic                   buf_wr_en;
 logic [ADDR_WIDTH-1:0]  buf_addr_r, buf_addr_w , cam_nxt_addr;
 // mem Outputs
 cmd_info_t              buf_dout;
-logic [buf_width:0] buf_mem [buf_depth-1:0]; // with valid entry 
-logic  buf_clr_en , buf_valid_free; 
+logic [buf_width-1:0] buf_mem [buf_depth-1:0]; // with valid entry 
+logic  buf_clr_en ; 
 assign buf_wr_en  = (state==CMD_WRITEBACK && !cmd_source) ? 1 : 0 ;  // Store info if cmd is depenedent
 assign buf_addr_r = cam_match_addr ;
 assign buf_addr_w = cam_nxt_addr   ; 
 assign buf_dout   = buf_mem[cam_nxt_addr][buf_width-1:0] ; 
-assign buf_clr_en = (state==PROC_FINISH) ? 1 : 0 ; 
-assign buf_valid_free = ~buf_mem[cam_nxt_addr][buf_width]; 
 assign buf_din = next_cmd_info ; 
 always_ff @(posedge i_clk or negedge i_rstn) begin  
     if (!i_rstn) begin 
- 
     end else begin 
         if (buf_wr_en) begin 
-            buf_mem[buf_addr_w] = {1'b1, buf_din};
+            buf_mem[buf_addr_w] = buf_din;
         end
-        if (buf_clr_en) begin 
-            // clear matched address 
-            buf_mem[cam_matched_addr][buf_width]  = 0 ; 
-            cam_nxt_addr <= cam_matched_addr; 
-        end   
-        else begin 
-            if (buf_mem[cam_nxt_addr][buf_width]) begin 
-                if(cam_nxt_addr == buf_depth-1)  
-                    cam_nxt_addr <= 0 ; 
-                else 
-                    cam_nxt_addr <= cam_nxt_addr + 1; 
-            end 
+    end
+end
+/* --------- Valid Generation of next free cam entry  (cam_nxt_addr) -------- */
+logic [`MAX_CMDS-1:0] valid_entries;  
+logic fill_entry , del_entry; 
+assign del_entry = (state==PROC_FINISH && cycle_delay ) ? 1 : 0 ; 
+logic free_entry;   
+assign free_entry = ~valid_entries[cam_nxt_addr] ; 
+assign fill_entry = (state==CAM_WRITE && cycle_delay) ? 1 : 0 ; 
+always_ff @(posedge i_clk or negedge i_rstn)begin  
+    if (!i_rstn) begin 
+        for (int i = 0 ; i < `MAX_CMDS; i++)begin 
+            valid_entries[i] <=0 ; 
         end
+    end else begin 
+        if (del_entry)begin 
+            valid_entries[cam_write_addr] = 0; // free
+            cam_nxt_addr<= cam_write_addr;  
+        end 
+        else if (!free_entry)begin 
+            if (cam_nxt_addr == `MAX_CMDS) begin
+                cam_nxt_addr <= 0 ; 
+            end else begin 
+                cam_nxt_addr <= cam_nxt_addr + 1; 
+            end
+        end
+        if(fill_entry) begin 
+            valid_entries[cam_write_addr] = 1; // occupied
+        end 
+        
     end
 end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  

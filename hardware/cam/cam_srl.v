@@ -1,3 +1,4 @@
+// edited by abubakr
 /*
 
 Copyright (c) 2015-2016 Alex Forencich
@@ -45,6 +46,7 @@ module cam_srl #(
     input  wire [DATA_WIDTH-1:0]    write_data,
     input  wire                     write_delete,
     input  wire                     write_enable,
+    input wire [((DATA_WIDTH + SLICE_WIDTH - 1) / SLICE_WIDTH)-1:0]    select_mask ,
     output wire                     write_busy,
 
     input  wire [DATA_WIDTH-1:0]    compare_data,
@@ -58,7 +60,6 @@ module cam_srl #(
 localparam SLICE_COUNT = (DATA_WIDTH + SLICE_WIDTH - 1) / SLICE_WIDTH;
 // depth of RAMs
 localparam RAM_DEPTH = 2**ADDR_WIDTH;
-
 localparam [1:0]
     STATE_INIT = 2'd0,
     STATE_IDLE = 2'd1,
@@ -105,7 +106,7 @@ always @* begin
     match_many_raw = 0 ; // * Note: to prevent matching ot entry that is currently being written to 
     for (k = 0; k < SLICE_COUNT; k = k + 1) begin
         // * Edited here to output a match only if 1 of the slices matched. 
-        match_many_raw = match_many_raw | (~shift_en & match_raw_out[k]); // * Note: this is to match slices
+        match_many_raw = match_many_raw | (~shift_en & match_raw_out[k] & {RAM_DEPTH{select_mask[k]}}); // * Note: this is to match slices
     end
 end
 
