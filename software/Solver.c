@@ -55,7 +55,7 @@ void solver_receive(command_t ** c){
             printf("[%d]: ", store + i + storeSize -1);
             for (int index = 0; index < storeSize; index++){
                 printf("%d * %d \t", tbuffer[starts[0] + i + index],vbuffer[starts[1] + index]);
-                total[index] += tbuffer[starts[0] + i + index] * vbuffer[starts[1] + index];
+                total[i+storeSize -1] += tbuffer[starts[0] + i + index] * vbuffer[starts[1] + index];
 
             }
             printf("\n");    
