@@ -100,7 +100,7 @@ reg [RAM_DEPTH-1:0] match_many_reg = {RAM_DEPTH{1'b0}};
 assign match_many = match_many_reg;
 
 integer k;
-// ! Problem with 0 0 match entries. Have to start from 1 or more
+
 always @* begin
     match_many_raw = 0 ; // * Note: to prevent matching ot entry that is currently being written to 
     for (k = 0; k < SLICE_COUNT; k = k + 1) begin

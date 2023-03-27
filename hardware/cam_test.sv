@@ -128,12 +128,18 @@ initial begin
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
     `assert_equals(match , 1 , "Searching with correct proc_id and incorrect cmd_id" )
-    compare_data =432;  
+    compare_data ={2'd0, proc_id, 2'd0  };  
     #T ; 
     $display("%b", match_many) ;  
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
-    `assert_equals(match , 0 , "should exist" )
+    `assert_equals(match , 0 , "should'nt exist" )
+    compare_data = 0 ; 
+    #T ; 
+    $display("%b", match_many) ;  
+    $display("%b", match_single) ; 
+    $display ("%h", match_addr) ; 
+    `assert_equals(match , 0 , "should'nt exist" )
     $finish; 
 end
 
