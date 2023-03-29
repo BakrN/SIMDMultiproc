@@ -66,11 +66,37 @@ void solver_receive(command_t ** c){
         }
         
     }
+    if(command_getOpcode(c) == 3){ //V subtraction
+        for (int i = 0; i < storeSize; i++)
+        {
+            printf("[%d]: ",store + i);
+            printf("%d -\t %d\n", vbuffer[starts[0] + i],vbuffer[starts[1] + i]);
+            vbuffer[store + i] = vbuffer[starts[0] + i] - vbuffer[starts[1] +i]; 
+
+        }
+        
+    }
 
     printf("\n");
 
     solver_print();
 }
+
+void solver_naive(){
+    printf("\033[32m NAIVE test: [ \t");
+    for (int i = 1; i < VECTORSIZE +1; i++)
+    {
+        int result = 0;
+        for (int j = 0; j < VECTORSIZE; j++)
+        {
+            result += testToeplitz[VECTORSIZE - i + j]*testVector[j];
+        }
+        printf("%d \t", result);
+        
+    }
+    printf("] \033[0m \n");
+}
+
 
 
 void solver_print(){

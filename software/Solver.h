@@ -11,6 +11,8 @@
 
 void solver_receive(command_t ** c);
 
+void solver_naive();
+
 void solver_print();
 
 
