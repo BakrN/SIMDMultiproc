@@ -50,21 +50,21 @@ void product_decompose(product_node_t **pn){
         command_create(3,id_count +2, (*pn)->parent_id, vector_getDataStart(&v_decomp[0]),vector_getDataStart(&v_decomp[1]),-1,vindex,length/2);
         id_count += 3;
         //Command 1 = m_decomp[0] + m_decomp[1]
-        //Command 2 = m_decomp[1] + m_decomp[2]
+        //Command 2 = m_decomp[2] + m_decomp[1]
         //Command 3 = v_decomp[0] - v_decomp[1]
 
 
-        matrix_t * m0 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[0]));
+        matrix_t * m0 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[2]));
         (*pn)->p0 = product_node_create(id_count,m0, v_decomp[1]);
         //Command 4 = C1 . v_decomp[1] -> create new products
 
-        vector_t * v0 = vector_create(length/2,vindex);
-        (*pn)->p1 = product_node_create(id_count +1, m_decomp[1],v0);
-        //Command 5 = m_decomp[1] . C3
-
-        matrix_t * m1 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[2]));
-        (*pn)->p2 = product_node_create(id_count,m1, v_decomp[0]);
+        matrix_t * m1 = matrix_create(length/2,matrix_getDataCenter(&m_decomp[0]));
+        (*pn)->p1 = product_node_create(id_count,m1, v_decomp[0]);
         //Command 6 = C2 . v_decomp[0]
+
+        vector_t * v0 = vector_create(length/2,vindex);
+        (*pn)->p2 = product_node_create(id_count +1, m_decomp[1],v0);
+        //Command 5 = m_decomp[1] . C3
 
 
         return;
@@ -80,7 +80,7 @@ void product_recompose(product_node_t **pn){
     if ((*pn)->p0 != NULL && (*pn)->p1 != NULL && (*pn)->p2 != NULL){
         command_create(1,0,0,vector_getDataStart(&(*pn)->p0->v),vector_getDataStart(&(*pn)->p2->v),-1,vector_getDataStart(&(*pn)->p0->v),vector_getLength(&(*pn)->p0->v));
         //Command 2 = P0 + P2
-        command_create(3,0,0,vector_getDataStart(&(*pn)->p1->v),vector_getDataStart(&(*pn)->p2->v),-1,vector_getDataStart(&(*pn)->p2->v),vector_getLength(&(*pn)->p1->v));
+        command_create(3,0,0,vector_getDataStart(&(*pn)->p1->v),vector_getDataStart(&(*pn)->p2->v),-1,vector_getDataStart(&(*pn)->p1->v),vector_getLength(&(*pn)->p1->v));
         //Command 3 = P1 - P2
     } else {
         //Command 1 = m.v (store in vector location)
