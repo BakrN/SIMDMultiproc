@@ -10,7 +10,7 @@ product_processor
 *.exe
 *.dll
 *.lib
-
+*.txt
 *.vcd
 *.vvp 
 *.log

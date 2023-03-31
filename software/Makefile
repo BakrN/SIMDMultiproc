@@ -39,12 +39,12 @@ product_processor : main.c Matrix.c Product.c Vector.c Command.c Solver.c
 .PHONY : clean clean-all run zip
 
 clean:
-	rm -rf *.o
+	rm -rf *.txt *.o
 
 clean-all: clean
 	rm -rf lib/*.so
 
-run: product_processor
+run: product_processor clean
 	@echo "$(TITLE_COLOR)\n***** TEST RUN ACTIVE *****$(NO_COLOR)"
 	./product_processor
 
