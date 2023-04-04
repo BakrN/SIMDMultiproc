@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+FILE *fptr;
+
 struct command{
     uint8_t opcode; //T 0 addition, 1 V addition, 2 multiply
     int id;
@@ -34,6 +36,9 @@ void command_create(uint8_t opcode,int id, int parent_id, int e0, int e1, int e2
 }
 
 void command_send(command_t ** command){
+    fptr = fopen("./out.txt","a");
+    fprintf(fptr, "%d, %d, %d, %d, %d, %d, %d\n", (*command)->opcode,(*command)->id,(*command)->parent_id,(*command)->elements[0], (*command)->elements[1], (*command)->store, (*command)->storeSize);
+    fclose(fptr);
     solver_receive(command);
 }
 

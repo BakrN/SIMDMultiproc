@@ -57,6 +57,7 @@ int main(){
     }
 
     
+    solver_naive();
 
     printf("End of Main\n");
     return 0;
