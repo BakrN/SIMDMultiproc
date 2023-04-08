@@ -45,6 +45,12 @@ class Toep2d {
         }
         void SetRow(Vec1d* row) { 
             m_row = std::make_unique<Vec1d>(*row) ; 
+        } 
+        BufferRef& GetColRef() { 
+            return m_col->GetRef() ; 
+        }
+        BufferRef& GetRowRef() { 
+            return m_row->GetRef() ; 
         }
     private: 
         int m_size ; 
