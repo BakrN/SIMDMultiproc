@@ -3,6 +3,7 @@
 
 #include "Graph.h"
 #include "Buffer.h"
+#include "Operator.h"
 #include <memory>
 // Matrix mulitplier graph builder
 
@@ -11,7 +12,7 @@ class DecompositionGraphBuilder {
         DecompositionGraphBuilder(Buffer& buffer, Node* root ) ;   
         ~DecompositionGraphBuilder() ;  
         void BuildGraph() ; 
-    void SplitTwoWay(Node* node) ;
+    void SplitTwoWay(ProductNode* node) ;
     void SplitThreeWay(Node* node) ;
     private: 
         Node* m_root; 

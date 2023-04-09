@@ -58,8 +58,9 @@ void BufferRef::Reserve() {
     }
 } 
 void BufferRef::AttachBuffer(Buffer* buf) { 
-    m_buf = std::make_shared<Buffer>(buf) ; 
+    m_buf.reset(buf) ; 
 }
+
 bool BufferRef::Attached() { 
     return m_buf != nullptr ; 
 }

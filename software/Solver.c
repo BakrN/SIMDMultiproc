@@ -84,6 +84,9 @@ void solver_receive(command_t ** c){
 }
 
 void solver_naive(){
+    // Write matrix to file 
+
+    
     printf("\033[32m NAIVE test: [ \t");
     for (int i = 1; i < VECTORSIZE +1; i++)
     {

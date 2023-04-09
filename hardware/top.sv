@@ -7,26 +7,22 @@ module top (
     i_clk, 
     i_rstn, 
     queue_cmd ,
-    queue_ack , 
     issuer_rd_queue, 
-    issuer_wr_queue, 
-    issuer_cmd
+    queue_empty, 
 ) ;  
 input i_clk; 
 input i_rstn; 
 input cmd_t queue_cmd ;
-input logic queue_ack; // for issuer writebacks
+input logic queue_empty ; 
 // issuer Outputs 
 logic [`PROC_COUNT-1:0] issuer_en_proc; 
 logic [`PROC_COUNT-1:0] issuer_ack_proc;
 instr_t issuer_instr;
 output logic   issuer_rd_queue;
-output logic   issuer_wr_queue;
-output cmd_t   issuer_cmd;
 issuer  u_issuer (
     .i_clk                               (        i_clk              ),
     .i_rstn                              (        i_rstn             ),
-    .i_ack_queue                         (        queue_ack          ),
+    .i_empty_queue                       (        queue_empty),         
     .i_busy_proc                         (        pool_busy       ),
     .i_finish_proc                       (        pool_finish      ),
     .i_ack_proc                          (        pool_ack         ),
@@ -34,16 +30,14 @@ issuer  u_issuer (
     .o_en_proc                           (        issuer_en_proc     ),
     .o_ack_proc                          (        issuer_ack_proc    ), 
     .o_instr                             (        issuer_instr       ),
-    .o_rd_queue                          (        issuer_rd_queue    ),
-    .o_wr_queue                          (        issuer_wr_queue    ),
-    .o_cmd                               (        issuer_cmd         )
+    .o_rd_queue                          (        issuer_rd_queue    )
 );
 // pool Outputs
 logic[`PROC_COUNT-1:0]  pool_req_rd;
 logic[`PROC_COUNT-1:0]  pool_req_wr;
 logic[`PROC_COUNT-1:0]  pool_finish;
 logic[`PROC_COUNT-1:0]  pool_busy;
-logic[`PROC_COUNT-1:0]  pool_ack;
+logic[`PROC_COUNT-1:0]  pool_ack; 
 logic [127:0] pool_data [`PROC_COUNT-1:0];
 addr_t pool_addr [`PROC_COUNT-1:0];
 logic [2:0] pool_wr_size [`PROC_COUNT-1:0];

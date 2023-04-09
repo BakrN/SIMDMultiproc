@@ -15,5 +15,6 @@ product_processor
 *.vvp 
 *.log
 hardware/sim/* 
-
+software/out/* 
+compiler/lib/* 
 __pycache__

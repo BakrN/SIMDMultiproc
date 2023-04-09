@@ -47,7 +47,7 @@ int main(){
         index++;
     }
     index--;
-
+     
     printf("\n \033[0;33m ##### Recomposing  ##### \033[0m\n");
 
 

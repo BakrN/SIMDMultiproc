@@ -18,7 +18,7 @@ class Toep2d {
         }  
         Toep2d() : m_col(nullptr), m_row(nullptr) , m_size(0) {}; 
         Toep2d(BufferRef& ref) {
-            m_size =  (ref.GetSize()+1)/2 ; 
+            m_size =  (ref.GetSize()+1)/2 ;   
             m_col = std::make_unique<Vec1d>(BufferRef(ref.GetBuffer(), ref.GetAddr(), m_size-1)) ; 
             m_row = std::make_unique<Vec1d>(BufferRef(ref.GetBuffer(), ref.GetAddr()+m_size, m_size)) ; 
         } 
