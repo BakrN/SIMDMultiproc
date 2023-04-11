@@ -22,7 +22,7 @@ void Buffer::Reserve(int index, int size) {
 }
 // cpy constructosr
 BufferRef::BufferRef(const BufferRef& other) { 
-    this->m_buf = other.m_buf ; 
+    this->m_buf  = other.m_buf ; 
     this->m_addr = other.m_addr ; 
     this->m_size = other.m_size ; 
     this->m_reserved = other.m_reserved ; 
@@ -35,16 +35,16 @@ BufferRef& BufferRef::operator=(const BufferRef& other) {
     m_reserved = other.m_reserved ; 
     return *this ; 
 }
-BufferRef::BufferRef(Buffer& buf, uint32_t size)  {
-    m_buf = std::make_shared<Buffer>(buf) ; 
+BufferRef::BufferRef(Buffer* buf, uint32_t size)  {
+    m_buf = buf; 
     m_size = size ;
-    m_addr = buf.GetFree() ; 
-    buf.Reserve(m_addr, m_size) ;
+    m_addr = buf->GetFree() ; 
+    buf->Reserve(m_addr, m_size) ;
     m_reserved = true ; 
 
 } 
-BufferRef::BufferRef(Buffer& buf , uint32_t addr , uint32_t size) {
-    m_buf = std::make_shared<Buffer>(buf) ; 
+BufferRef::BufferRef(Buffer* buf , uint32_t addr , uint32_t size) {
+    m_buf = buf; 
     m_size = size ;
     m_addr = addr ; 
     m_reserved = true ;
@@ -58,7 +58,7 @@ void BufferRef::Reserve() {
     }
 } 
 void BufferRef::AttachBuffer(Buffer* buf) { 
-    m_buf.reset(buf) ; 
+    m_buf = buf ; 
 }
 
 bool BufferRef::Attached() { 
@@ -70,7 +70,7 @@ uint32_t BufferRef::GetAddr() const {
 uint32_t BufferRef::GetSize() const {  
     return m_size ; 
 }
-Buffer& BufferRef::GetBuffer() { 
-    return *m_buf.get() ; 
+Buffer* BufferRef::GetBuffer() {  
+    return m_buf ; 
 }
 

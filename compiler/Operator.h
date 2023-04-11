@@ -36,7 +36,7 @@ class OpNode : public Node{
         void* GetValue() override ;
         void SetOperands(Node* operand0 , Node* operand1) ;  
         void SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) ;
-        
+        Opcode_t GetOpcode() ;
     private:
         Opcode_t m_opcode ; 
         void*  m_result ;  
@@ -55,10 +55,11 @@ class DataNode : public Node {
 
 
 template<typename T>
-DataNode::DataNode(T* data) : m_data(data) {
+DataNode::DataNode(T* data) {
     std::string vtype = (typeid(T) == typeid(Toep2d)) ? "toep" : "vec" ;
     this->AddAttribute("value_type", vtype) ;  
     this->AddAttribute("node_type", "data" ) ; 
+    m_data = static_cast<void*>(data) ;
 } 
 
 

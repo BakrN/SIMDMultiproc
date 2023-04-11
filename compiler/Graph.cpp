@@ -1,6 +1,8 @@
 #include "Graph.h"
 #include <type_traits>
-
+#include <iostream> 
+#include <unordered_set> 
+#include <functional>
 Node::~Node() { 
 }
 
@@ -148,17 +150,53 @@ bool ForwardLevelIterator::operator!=(const GraphIterator& other) {
 
 Graph::Graph(Node* root) : m_root(root) {
 }
-
 ForwardLevelIterator Graph::begin() {
     return ForwardLevelIterator(m_root);
 }
 ForwardLevelIterator Graph::end() { // ! TODO : Implement this
-    return ForwardLevelIterator(nullptr);
+    std::stack<Node*> m_ptr;
+    Node* current = nullptr;
+    m_ptr.push(m_root);
+    while(!m_ptr.empty()) {
+        current = m_ptr.top();
+        m_ptr.pop() ; 
+        for (auto& user : current->Users()) {
+            m_ptr.push(user);
+        }
+    }
+    return ForwardLevelIterator(current);
 }
 ReverseLevelIterator Graph::rbegin() { // ! TODO : Incorporate type filtering 
     return ReverseLevelIterator(m_root, ""); // 
 }
 ReverseLevelIterator Graph::rend() { // ! TODO : Implement this
     return ReverseLevelIterator(nullptr, "");
+}
+
+Node* Graph::GetRoot() {
+    return m_root;
+}
+
+void Graph::PrintGraph() {
+    std::unordered_map<Node*, int> level;
+    std::queue<Node*> q;
+
+    level[m_root] = 0;
+    q.push(m_root);
+
+    while (!q.empty()) {
+        Node* node = q.front();
+        q.pop();
+
+        std::cout << "Level " << level[node] << ": ";
+        std::cout << "Node " << node << std::endl;
+
+        for (Node* user : node->Users()) {
+            if (level.find(user) == level.end()) {
+                level[user] = level[node] + 1;
+                q.push(user);
+            }
+        }
+    }
 }
 

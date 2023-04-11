@@ -1,11 +1,13 @@
 #include "Operator.h" 
 #include <type_traits>
-
+#include <iostream> 
 ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), m_vec(vec) {
     this->AddAttribute("node_type", "product") ; 
-    this->AddAttribute("value_type", "vec") ; 
+    this->AddAttribute("value_type", "vec") ;  
     if(overwrite) { 
-        m_result = new Vec1d(*static_cast<Vec1d*>(vec->GetValue())); 
+        //std::cout << "Address of ptr: " << static_cast<Vec1d*>(vec->GetValue()) << std::endl ;
+        m_result = new Vec1d(*(static_cast<Vec1d*>(vec->GetValue())));  
+
     } else { 
         m_result = new Vec1d(static_cast<Vec1d*>(vec->GetValue())->GetRef().GetBuffer(), static_cast<Vec1d*>(vec->GetValue())->Size()) ;
     }
@@ -32,6 +34,9 @@ OpNode::~OpNode() {
         delete static_cast<Toep2d*>(m_result) ;  
     else if(this->GetAttribute("value_type") == "vec")
         delete static_cast<Vec1d*>(m_result) ; 
+}
+Opcode_t OpNode::GetOpcode() { 
+    return m_opcode ; 
 }
 void OpNode::SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) { 
     this->AddInput(operand0) ;
@@ -83,20 +88,7 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1)  {
     } 
     else {  
         // TODO: mat mul case
-        int size= 0 ; 
-        Buffer* buf = nullptr;
-        if (op0type=="toep") { 
-            Toep2d* toep = static_cast<Toep2d*>(operand0->GetValue()) ;
-            size = toep->Size() ; 
-            buf = &toep->GetColRef().GetBuffer() ; 
-        } 
-        else { 
-            Vec1d* vec = static_cast<Vec1d*>(operand0->GetValue()) ;
-            size = vec->Size() ; 
-            buf = &vec->GetRef().GetBuffer() ;  
-        } 
-        this->AddAttribute("value_type", "vec") ;
-        m_result = static_cast<void*>(new Vec1d(*buf, size)) ;
+        std::cout << "Mat mul case" << std::endl ;
     } 
     operand0->AddUser(this) ;
     operand1->AddUser(this) ; 

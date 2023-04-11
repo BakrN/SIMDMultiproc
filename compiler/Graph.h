@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <algorithm> 
 #include <queue> 
-// commutative node
+
 
 class Node { 
     public: 
@@ -81,7 +81,9 @@ class Graph {
         ForwardLevelIterator begin() ;  
         ForwardLevelIterator end()   ;  // take rightmost  node 
         ReverseLevelIterator rbegin() ; 
-        ReverseLevelIterator rend()   ;  // take rightmost  node 
+        ReverseLevelIterator rend()   ;  // take rightmost  node  
+        Node* GetRoot() ;
+        void PrintGraph() ; 
     private: 
         Node* m_root ; 
 

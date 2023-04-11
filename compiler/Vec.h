@@ -9,7 +9,7 @@ class Vec1d {
             m_size = vec.m_size ; 
             return *this ; 
         }
-        Vec1d(Buffer& buffer, uint32_t size) : m_ref(buffer, size) {
+        Vec1d(Buffer* buffer, uint32_t size) : m_ref(buffer, size) {
             m_size = size ; 
         }
         Vec1d(const BufferRef& ref) : m_ref(ref) {  

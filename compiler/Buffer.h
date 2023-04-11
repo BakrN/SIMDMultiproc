@@ -22,16 +22,16 @@ class BufferRef {
         BufferRef(const BufferRef& other)  ;
         // assignment operator
         BufferRef& operator=(const BufferRef& other); 
-        BufferRef(Buffer& buf, uint32_t size); 
-        BufferRef(Buffer& buf, uint32_t addr , uint32_t size); 
+        BufferRef(Buffer* buf, uint32_t size); 
+        BufferRef(Buffer* buf, uint32_t addr , uint32_t size); 
         void Reserve() ;
         void AttachBuffer(Buffer* buf) ; 
         bool Attached() ; 
         uint32_t GetAddr() const ;
         uint32_t GetSize() const  ; 
-        Buffer& GetBuffer() ;
+        Buffer* GetBuffer() ; 
     private: 
-        std::shared_ptr<Buffer> m_buf ;
+        Buffer* m_buf ;
         uint32_t m_addr ; 
         uint32_t m_size ; 
         bool m_reserved ; 

@@ -2,13 +2,15 @@
 #include "Operator.h" 
 #include "Graph.h"
 struct Command {  
-    int m_id ; 
-    int m_dep ; 
-    int m_operand0 ;  // operand0 address
-    int m_operand1 ;  // operand1 address
-    int m_wrbackaddr; 
-    Opcode_t m_operation ; 
+    int id ; 
+    int dep ; 
+    int operand0 ;  // operand0 address
+    int operand1 ;  // operand1 address
+    int wrbackaddr; 
+    int count  ;
+    Opcode_t operation ; 
 } ; 
+
 // generates command according to decomposition algorithm
 class CommandGenerator{  
     public: 
@@ -17,6 +19,7 @@ class CommandGenerator{
         virtual ~CommandGenerator() ; 
         virtual void Generate() ; 
         void AttachGraph(Graph* graph) {m_graph = graph;} ;
+    private: 
         Graph* m_graph; 
 }; 
 
@@ -25,12 +28,12 @@ class CommandGenerator{
 class DecomposerCommandGenerator : public CommandGenerator{ 
     public: 
         DecomposerCommandGenerator() ; 
-        DecomposerCommandGenerator(Graph* graph) ; 
+        DecomposerCommandGenerator(Node* node) ; 
         ~DecomposerCommandGenerator() ; 
         void Generate() override ; 
     private: 
         std::vector<Command> m_commands ; 
-        Graph* m_graph; 
+        Node* m_root;  
 };
 
 // Only commands on P vectos 
