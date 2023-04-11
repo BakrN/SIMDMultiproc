@@ -3,6 +3,17 @@
 #include "Solver.h"
 #include <iostream>
 
+void naive_matmul(unit_t* matrix, unit_t* vec, unit_t* result, int size) {  // row major order
+    for (int i = 0 ; i < size; i++) { 
+        for (int j = 0 ; j < size ; j++) { 
+            for (int k = 0 ; k < size ; k++) { 
+                result[i*size + j] += matrix[i*size + k] * vec[k*size + j] ;
+            }
+        } 
+    }  
+}  
+// create
+
 int main() { 
     Buffer buf(100);  
     Toep2d* toep = new Toep2d(&buf, 8 );// 4x4
@@ -14,10 +25,14 @@ int main() {
     DecompositionGraphBuilder builder(buf, node);  
     Graph* graph = builder.BuildGraph() ;  
     std::cout << "Finished decomposition graph builder" << std::endl;
-    graph->PrintGraph() ;
-    
-
-
+    Graph* toep_graph = new Graph(static_cast<ProductNode*>(graph->GetRoot())->GetToepNode());
+    Graph* vec_graph  = new Graph(static_cast<ProductNode*>(graph->GetRoot())->GetVecNode());
+    //std::cout << "Printing toeplitz graph " << std::endl;
+    //toep_graph->PrintGraph() ;
+    //std::cout << "Printing vec graph " << std::endl;
+    //vec_graph->PrintGraph() ; 
+    // std::cout << "Printing recompostition graph " << std::endl;
+    // graph->PrintGraphReverse() ;  
     
     return 0 ;
 } 

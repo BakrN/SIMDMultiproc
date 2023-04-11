@@ -1,4 +1,5 @@
 #include "Graph.h"
+#include "Operator.h"
 #include <type_traits>
 #include <iostream> 
 #include <unordered_set> 
@@ -29,7 +30,8 @@ void Node::AddUser(Node* node){
     m_users.push_back(node);
 } 
 
-
+ReverseLevelIterator::~ReverseLevelIterator() {
+}
 ReverseLevelIterator::ReverseLevelIterator(Node* node, const std::string& type, bool auto_traverse) : m_type(type) {
 
     std::queue<Node*> q;
@@ -99,20 +101,21 @@ ForwardLevelIterator::ForwardLevelIterator(Node* node)  {
     // Initialize the stack with the given node
     m_ptr.push(node);
 }
-
+ForwardLevelIterator::~ForwardLevelIterator() { 
+}
 Node& ForwardLevelIterator::operator*() {
     // Return a reference to the top element of the stack
-    return *m_ptr.top();
+    return *m_ptr.front();
 }
 
 Node* ForwardLevelIterator::operator->() {
     // Return a pointer to the top element of the stack
-    return m_ptr.top();
+    return m_ptr.front();
 }
 
 ForwardLevelIterator& ForwardLevelIterator::operator++() {
     // Pop the top element of the stack
-    Node* current = m_ptr.top();
+    Node* current = m_ptr.front();
     m_ptr.pop();
 
     // Push the children of the current node onto the stack
@@ -135,15 +138,15 @@ bool ForwardLevelIterator::operator==(const GraphIterator& other) {
 
     // Compare the stacks of the two iterators by comparing the sizes, the current top reference 
     if(auto other_cast = dynamic_cast<const ForwardLevelIterator*>(&other)) {
-        return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.top() == other_cast->m_ptr.top() && m_ptr.top() == other_cast->m_ptr.top();
+        return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.front() == other_cast->m_ptr.front() && m_ptr.front() == other_cast->m_ptr.front();
     }
     return false ;
 }
 
 bool ForwardLevelIterator::operator!=(const GraphIterator& other) {
-    // Compare the stacks of the two iterators 
+    // Compare the queues of the two iterators 
     if(auto other_cast = dynamic_cast<const ForwardLevelIterator*>(&other)) {
-        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.top() != other_cast->m_ptr.top() || m_ptr.top() != other_cast->m_ptr.top();
+        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.front() != other_cast->m_ptr.front() || m_ptr.front() != other_cast->m_ptr.front();
     }
     return false ;
 }
@@ -187,11 +190,24 @@ void Graph::PrintGraph() {
     while (!q.empty()) {
         Node* node = q.front();
         q.pop();
-
         std::cout << "Level " << level[node] << ": ";
-        std::cout << "Node " << node << std::endl;
+        std::cout << "Node " << node <<  " node type: " << node->GetAttribute("node_type") << " value type: " << node->GetAttribute("value_type"); 
+        if (node->GetAttribute("node_type")=="op") { 
+            OpNode* op = dynamic_cast<OpNode*>(node);
+            if (op->GetOpcode() == Opcode_t::ADD) { 
+                std::cout << " Operation type:  ADD ";
+            } else if (op->GetOpcode() == Opcode_t::SUB) { 
+                std::cout << " Operation type:  SUB ";
+            } else if (op->GetOpcode() == Opcode_t::MMUL_2x) { 
+                std::cout << " Operation type:  MMUL_2x ";
+            } else { 
+                std::cout << " Operation type:  MMUL_3x ";
+            } 
+        } 
+        std::cout << std::endl;
 
-        for (Node* user : node->Users()) {
+        for (Node* user : node->Users()) { 
+            // std::cout << "  User " << user << std::endl;
             if (level.find(user) == level.end()) {
                 level[user] = level[node] + 1;
                 q.push(user);
@@ -199,4 +215,38 @@ void Graph::PrintGraph() {
         }
     }
 }
+void Graph::PrintGraphReverse() {
+    std::unordered_map<Node*, int> level;
+    std::queue<Node*> q;
 
+    level[m_root] = 0;
+    q.push(m_root);
+
+    while (!q.empty()) {
+        Node* node = q.front();
+        q.pop();
+        std::cout << "Level " << level[node] << ": ";
+        std::cout << "Node " << node <<  " node type: " << node->GetAttribute("node_type") << " value type: " << node->GetAttribute("value_type"); 
+        if (node->GetAttribute("node_type")=="op") { 
+            OpNode* op = dynamic_cast<OpNode*>(node);
+            if (op->GetOpcode() == Opcode_t::ADD) { 
+                std::cout << " Operation type:  ADD ";
+            } else if (op->GetOpcode() == Opcode_t::SUB) { 
+                std::cout << " Operation type:  SUB ";
+            } else if (op->GetOpcode() == Opcode_t::MMUL_2x) { 
+                std::cout << " Operation type:  MMUL_2x ";
+            } else { 
+                std::cout << " Operation type:  MMUL_3x ";
+            } 
+        } 
+        std::cout << std::endl;
+
+        for (Node* input: node->Inputs()) { 
+            // std::cout << "  User " << user << std::endl;
+            if (level.find(input) == level.end()) {
+                level[input] = level[node] + 1;
+                q.push(input);
+            }
+        }
+    }
+}

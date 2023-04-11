@@ -27,13 +27,14 @@ Graph* DecompositionGraphBuilder::BuildGraph() {
             if(pnode->GetToepNode() != nullptr && pnode->GetVecNode() != nullptr) { 
                 // check if we reached size 2 
                 Toep2d* toep = static_cast<Toep2d*>(pnode->GetToepNode()->GetValue()); 
-                if (toep->Size() > 2) { 
+                if (toep->Size() > BASE_MMUL_2x_SIZE) { 
                     // split node 
                     SplitTwoWay(pnode) ;
                 } else { 
                     OpNode* op = new OpNode(Opcode_t::MMUL_2x) ;
                     Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
                     BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
+                    std::cout << "result: " << pnode->GetVecNode()->GetAttribute("value_type")<< std::endl ;
                     op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
                 } 
             }
@@ -85,10 +86,8 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     // Vector decomposition
     // v0 used for P0,v1 used for P1,v0-v1 used for P2
     Vec1d* vec= static_cast<Vec1d*>(node->GetVecNode()->GetValue()) ;
-    std::cout << "getting vec0" << std::endl;
     Vec1d* v0 = vec->operator()(0, vec->Size()/2) ;
     Vec1d* v1 = vec->operator()(vec->Size()/2, vec->Size()/2) ;
-    std::cout << "Finished Getting vec1" << std::endl;
     // Create data nodes for vecs  
     DataNode* p0_v = new DataNode(v0) ;
     DataNode* p1_v = new DataNode(v1) ;

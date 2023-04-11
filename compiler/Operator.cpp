@@ -42,7 +42,7 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) 
     this->AddInput(operand0) ;
     this->AddInput(operand1) ;
     std::string op0type = operand0->GetAttribute("value_type") ; 
-    std::string op1type = operand0->GetAttribute("value_type") ;  
+    std::string op1type = operand1->GetAttribute("value_type") ;  
     assert(op0type == "vec" || op0type=="toep") ;
     assert(op1type == "vec" || op1type=="toep") ;
     if (op0type == "toep" && op1type == "toep") { 

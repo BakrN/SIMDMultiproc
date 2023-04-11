@@ -8,34 +8,26 @@ struct Command {
     int operand1 ;  // operand1 address
     int wrbackaddr; 
     int count  ;
-    Opcode_t operation ; 
+    Opcode_t operation ;  
+    // Following two member are only used for testing matmul2x2 and matmul3x3
+    Toep2d* toep ; 
+    Vec1d* vec ;
 } ; 
-
-// generates command according to decomposition algorithm
-class CommandGenerator{  
-    public: 
-        CommandGenerator() ; 
-        CommandGenerator(Graph* graph) {m_graph = graph;} ; 
-        virtual ~CommandGenerator() ; 
-        virtual void Generate() ; 
-        void AttachGraph(Graph* graph) {m_graph = graph;} ;
-    private: 
-        Graph* m_graph; 
-}; 
 
 
 // only commands generator on T's and vectors
-class DecomposerCommandGenerator : public CommandGenerator{ 
+class DecomposerCommandGenerator{ 
     public: 
         DecomposerCommandGenerator() ; 
         DecomposerCommandGenerator(Node* node) ; 
         ~DecomposerCommandGenerator() ; 
-        void Generate() override ; 
+        void Generate() ; 
     private: 
-        std::vector<Command> m_commands ; 
+        std::vector<Command> m_commands ;  
+        void FindAndEnqueueUsers(Node* node) ; 
         Node* m_root;  
 };
 
-// Only commands on P vectos 
+// Generate hex file for hardware testing
 class CommandSerializer {
 } ; 

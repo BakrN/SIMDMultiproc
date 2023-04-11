@@ -55,7 +55,7 @@ class ForwardLevelIterator : public GraphIterator{
         virtual bool operator==(const GraphIterator&) override; 
         virtual bool operator!=(const GraphIterator&) override; 
     private:  
-        std::stack<Node*> m_ptr;   
+        std::queue<Node*> m_ptr;   
     
 }; 
 
@@ -84,6 +84,7 @@ class Graph {
         ReverseLevelIterator rend()   ;  // take rightmost  node  
         Node* GetRoot() ;
         void PrintGraph() ; 
+        void PrintGraphReverse() ; 
     private: 
         Node* m_root ; 
 

@@ -1,6 +1,7 @@
 #ifndef ALGO_H
 #define ALGO_H
-
+#define BASE_MMUL_2x_SIZE 2 // lowest point where we actuall do the multiplication (could try out with different values  later) 
+#define BASE_MMUL_3x_SIZE 3
 #include "Graph.h"
 #include "Buffer.h"
 #include "Operator.h"
