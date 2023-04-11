@@ -75,7 +75,7 @@ void DecomposerCommandGenerator::Generate() {
     Graph* recomp_graph = new Graph(m_root); 
     Graph* toep_graph   = new Graph(static_cast<ProductNode*>(m_root)->GetToepNode()); 
     Graph* vec_graph    = new Graph(static_cast<ProductNode*>(m_root)->GetVecNode());
-    std::unordered_map<Node* , int > enqueued;  // node to command id
+    std::unordered_map<Node* , int > enqueued;  // node to command id (very inefficient but whatever fix later ) 
     // decomposition 
 
     int cmd_id = 0 ;    
@@ -105,7 +105,9 @@ void DecomposerCommandGenerator::Generate() {
             // call previous function on all command in dep_cmds
             Node* dep_cmd = dep_cmds.front() ;
             dep_cmds.pop(); 
-            FindAndEnqueueUsers(dep_cmds.front()) ; 
+            if (!dep_cmds.empty()) { 
+                FindAndEnqueueUsers(dep_cmds.front()) ; 
+            }
 
         }
     }

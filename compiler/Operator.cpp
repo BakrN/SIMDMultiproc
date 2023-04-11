@@ -4,6 +4,8 @@
 ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), m_vec(vec) {
     this->AddAttribute("node_type", "product") ; 
     this->AddAttribute("value_type", "vec") ;  
+    toep->SetParent(this); 
+    vec->SetParent(this); 
     if(overwrite) { 
         //std::cout << "Address of ptr: " << static_cast<Vec1d*>(vec->GetValue()) << std::endl ;
         m_result = new Vec1d(*(static_cast<Vec1d*>(vec->GetValue())));  

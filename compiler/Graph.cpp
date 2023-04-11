@@ -29,7 +29,9 @@ void Node::AddInput(Node* node){
 void Node::AddUser(Node* node){
     m_users.push_back(node);
 } 
-
+void Node::SetParent(Node* node) { 
+    m_parent = node; 
+}
 ReverseLevelIterator::~ReverseLevelIterator() {
 }
 ReverseLevelIterator::ReverseLevelIterator(Node* node, const std::string& type, bool auto_traverse) : m_type(type) {
@@ -52,11 +54,11 @@ ReverseLevelIterator::ReverseLevelIterator(Node* node, const std::string& type, 
 }
 
 Node& ReverseLevelIterator::operator*() {
-    return *m_ptr.top();
+    return *m_ptr.front();
 }
 
 Node* ReverseLevelIterator::operator->() {
-    return m_ptr.top();
+    return m_ptr.front();
 }
 
 ReverseLevelIterator& ReverseLevelIterator::operator++() {
@@ -65,7 +67,7 @@ ReverseLevelIterator& ReverseLevelIterator::operator++() {
 }
 
 ReverseLevelIterator& ReverseLevelIterator::operator--() {
-    Node* n = m_ptr.top();
+    Node* n = m_ptr.front();
     std::vector<Node*>& inputs = n->Inputs();
     if (!inputs.empty()) {
         std::sort(inputs.begin(), inputs.end(), [](Node* a, Node* b) {
@@ -84,14 +86,14 @@ bool ReverseLevelIterator::operator==(const GraphIterator& other) {
 
     // Compare the stacks of the two iterators by comparing the sizes, the current top reference 
     if(auto other_cast = dynamic_cast<const ReverseLevelIterator*>(&other)) {
-        return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.top() == other_cast->m_ptr.top() && m_ptr.top() == other_cast->m_ptr.top();
+        return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.front() == other_cast->m_ptr.front() && m_ptr.front() == other_cast->m_ptr.front();
     }
     return false ;
 }
 
 bool ReverseLevelIterator::operator!=(const GraphIterator& other) {
     if(auto other_cast = dynamic_cast<const ReverseLevelIterator*>(&other)) {
-        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.top() != other_cast->m_ptr.top() || m_ptr.top() != other_cast->m_ptr.top();
+        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.front() != other_cast->m_ptr.front() || m_ptr.front() != other_cast->m_ptr.front();
     }
     return false ;
 }
@@ -157,11 +159,11 @@ ForwardLevelIterator Graph::begin() {
     return ForwardLevelIterator(m_root);
 }
 ForwardLevelIterator Graph::end() { // ! TODO : Implement this
-    std::stack<Node*> m_ptr;
+    std::queue<Node*> m_ptr;
     Node* current = nullptr;
     m_ptr.push(m_root);
     while(!m_ptr.empty()) {
-        current = m_ptr.top();
+        current = m_ptr.front();
         m_ptr.pop() ; 
         for (auto& user : current->Users()) {
             m_ptr.push(user);
