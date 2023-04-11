@@ -12,6 +12,11 @@ struct Command {
     // Following two member are only used for testing matmul2x2 and matmul3x3
     Toep2d* toep ; 
     Vec1d* vec ;
+    std::ostream& operator<<(std::ostream& os) { 
+        std::string op = (operation == Opcode_t::ADD) ? "ADD" : (operation == Opcode_t::SUB) ? "SUB" : (operation == Opcode_t::MMUL_2x) ? "MMUL_2x" : "MMUL_3x" ;
+        os << "id: " << id << " dep: " << dep << " operand0: " << operand0 << " operand1: " << operand1 << " wrbackaddr: " << wrbackaddr << " count: " << count << " operation: " << op << std::endl;
+        return os;
+    } ;
 } ; 
 
 
@@ -21,10 +26,11 @@ class DecomposerCommandGenerator{
         DecomposerCommandGenerator() ; 
         DecomposerCommandGenerator(Node* node) ; 
         ~DecomposerCommandGenerator() ; 
-        void Generate() ; 
+        void Generate() ;  
+        std::vector<Command>& GetCommands() ;
     private: 
         std::vector<Command> m_commands ;  
-        void FindAndEnqueueUsers(Node* node) ; 
+        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int> enqueued , int dep_id = 0) ;  
         Node* m_root;  
 };
 
