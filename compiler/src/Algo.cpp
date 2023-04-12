@@ -2,9 +2,10 @@
 #include "Toeplitz.h"
 #include "Operator.h"
 #include <stdexcept>
-DecompositionGraphBuilder::DecompositionGraphBuilder(Buffer& buffer, Node* root) :m_buffer(buffer){ 
-    m_root = root ; 
-    m_graph = new Graph(root) ;  
+#include <unordered_set>
+DecompositionGraphBuilder::DecompositionGraphBuilder(Buffer& buffer, ProductNode* node) :m_buffer(buffer){ 
+    m_root = node; 
+    m_graph = new Graph(node) ;  
 }
 DecompositionGraphBuilder::~DecompositionGraphBuilder() { 
     delete m_graph ;  
@@ -19,14 +20,18 @@ Graph* DecompositionGraphBuilder::BuildGraph() {
     // 2x2 nodes
     std::queue<Node*> q ;
     q.push(m_root) ;
+    std::unordered_set<ProductNode*> visited ;
     while(!q.empty()) { 
         Node* node = q.front() ;
         q.pop() ;
-        if(node->GetAttribute("node_type") == "product") { 
-            ProductNode* pnode = static_cast<ProductNode*>(node) ;
+        // stop at product node of size 2 and 3  
+        ProductNode* pnode = dynamic_cast<ProductNode*>(node) ; 
+        if(pnode && visited.find(pnode) == visited.end())  { 
+
             if(pnode->GetToepNode() != nullptr && pnode->GetVecNode() != nullptr) { 
                 // check if we reached size 2 
-                Toep2d* toep = static_cast<Toep2d*>(pnode->GetToepNode()->GetValue()); 
+                Toep2d* toep = static_cast<Toep2d*>(pnode->GetToepNode()->GetValue());  
+                visited.insert(pnode) ;
                 if (toep->Size() > BASE_MMUL_2x_SIZE) { 
                     // split node 
                     SplitTwoWay(pnode) ;
@@ -34,8 +39,8 @@ Graph* DecompositionGraphBuilder::BuildGraph() {
                     OpNode* op = new OpNode(Opcode_t::MMUL_2x) ;
                     Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
                     BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
-                    std::cout << "result: " << pnode->GetVecNode()->GetAttribute("value_type")<< std::endl ;
                     op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
+                    continue ; 
                 } 
             }
         }
@@ -58,31 +63,28 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
      * p1 = (t1+t2)(v0) 
      * p2 = t1 	(v0-v1)
      */
-    std::string type = node->GetAttribute("value_type") ;
     // toeplitz decomposition
     // t1+t0 used for P0,t1+t2 used for P1,t1 used for P2
     Toep2d* toep = static_cast<Toep2d*>(node->GetToepNode()->GetValue()) ;
     Toep2d* t0 = toep->operator()(0,toep->Size()/2, toep->Size()/2) ; // error here
     Toep2d* t2 = toep->operator()(toep->Size()/2,0, toep->Size()/2) ;
     Toep2d* t1 = toep->operator()(0,0, toep->Size()/2) ;
-    // create data nodes for toeps
+    // create data nodes for toeps 
     DataNode* dn_t0 = new DataNode(t0) ; 
-    DataNode* dn_t1 = new DataNode(t1) ; 
-    DataNode* p2_t  = new DataNode(t2) ; 
-    // create op nodes for t1+t0 and t1+t2 
-    OpNode* p0_t = new OpNode(Opcode_t::ADD) ; 
-    OpNode* p1_t = new OpNode(Opcode_t::ADD) ; 
-    p0_t->SetOperands(dn_t0, dn_t1) ;
-    p1_t->SetOperands(dn_t1, p2_t) ;  
-    // add inputs to toep
-    p0_t->AddInput(node->GetToepNode()) ;
-    p1_t->AddInput(node->GetToepNode()) ;
+    DataNode* dn_t2 = new DataNode(t2) ; 
+    DataNode* p2_t  = new DataNode(t1) ; 
+    dn_t0->AddInput(node->GetToepNode()) ;
+    dn_t2->AddInput(node->GetToepNode()) ;
     p2_t->AddInput(node->GetToepNode()) ;
     // add users to node 
-
-    node->GetToepNode()->AddUser(p0_t) ;
-    node->GetToepNode()->AddUser(p1_t) ;
+    node->GetToepNode()->AddUser(dn_t0) ;
+    node->GetToepNode()->AddUser(dn_t2) ;
     node->GetToepNode()->AddUser(p2_t) ; 
+    // create op nodes for t1+t0 and t1+t2 
+    OpNode* p0_t = new OpNode(Opcode_t::ADD) ; 
+    OpNode* p1_t = new OpNode(Opcode_t::ADD) ;  
+    p0_t->SetOperands(dn_t0, p2_t) ;
+    p1_t->SetOperands(p2_t, dn_t2) ;   
     // Vector decomposition
     // v0 used for P0,v1 used for P1,v0-v1 used for P2
     Vec1d* vec= static_cast<Vec1d*>(node->GetVecNode()->GetValue()) ;
@@ -90,19 +92,20 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     Vec1d* v1 = vec->operator()(vec->Size()/2, vec->Size()/2) ;
     // Create data nodes for vecs  
     DataNode* p0_v = new DataNode(v0) ;
-    DataNode* p1_v = new DataNode(v1) ;
-    // create op nodes for v0-v1
-    OpNode* p2_v = new OpNode(Opcode_t::SUB) ;
-    p2_v->SetOperands(p0_v, p1_v) ;
+    DataNode* p1_v = new DataNode(v1) ; 
     // add inputs to vec
     p0_v->AddInput(node->GetVecNode()) ;
     p1_v->AddInput(node->GetVecNode()) ;
     // add users to nodes
     node->GetVecNode()->AddUser(p0_v) ;
     node->GetVecNode()->AddUser(p1_v) ;
+    // create op nodes for v0-v1
+    OpNode* p2_v = new OpNode(Opcode_t::SUB) ;
+    p2_v->SetOperands(p0_v, p1_v) ;
+    // Recomposition
     ProductNode* p0 = new ProductNode(p0_t ,p0_v,true)   ;
     ProductNode* p1 = new ProductNode(p1_t ,p1_v,true)   ;
-    ProductNode* p2 = new ProductNode(p1_t ,p2_v,true)  ; 
+    ProductNode* p2 = new ProductNode(p2_t ,p2_v,true)  ; 
     // Reduce p0 , p1 ,p2 to get original node 
     OpNode* reduce0 = new OpNode(Opcode_t::ADD) ;
     OpNode* reduce1 = new OpNode(Opcode_t::SUB) ;
@@ -112,11 +115,10 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     reduce1->SetOperands(p1, p2, ref_1) ;
     node->AddInput(reduce0) ;
     node->AddInput(reduce1) ;
-
     reduce0->AddUser(node) ;
     reduce1->AddUser(node) ; 
 }
-void DecompositionGraphBuilder::SplitThreeWay(Node* node) { 
+void DecompositionGraphBuilder::SplitThreeWay(ProductNode* node) { 
     // three way split  
     // recursively split the nodes
     /*Y0 = t2*v0 + t1*v1 + t0*v2 = p0 + p3 + p4 

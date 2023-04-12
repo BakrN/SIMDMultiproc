@@ -131,6 +131,11 @@ void DecomposerCommandGenerator::Generate() {
     delete vec_graph; 
 } 
 
+std::ostream& operator<<(std::ostream& os , const Command& cmd ) { 
+        std::string op = (cmd.operation == Opcode_t::ADD) ? "ADD" : (cmd.operation == Opcode_t::SUB) ? "SUB" : (cmd.operation == Opcode_t::MMUL_2x) ? "MMUL_2x" : "MMUL_3x" ;
+        os << "id: " << cmd.id << " dep: " << cmd.dep << " operand0: " << cmd.operand0 << " operand1: " << cmd.operand1 << " wrbackaddr: " << cmd.wrbackaddr << " count: " << cmd.count << " operation: " << op << std::endl;
+        return os;
+} ;
 std::vector<Command>& DecomposerCommandGenerator::GetCommands() {
     return m_commands;
 }

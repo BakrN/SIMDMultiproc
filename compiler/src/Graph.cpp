@@ -32,6 +32,9 @@ void Node::AddUser(Node* node){
 void Node::SetParent(Node* node) { 
     m_parent = node; 
 }
+Node* Node::GetParent() { 
+    return m_parent; 
+}
 ReverseLevelIterator::~ReverseLevelIterator() {
 }
 ReverseLevelIterator::ReverseLevelIterator(Node* node, const std::string& type, bool auto_traverse) : m_type(type) {
@@ -101,7 +104,9 @@ bool ReverseLevelIterator::operator!=(const GraphIterator& other) {
 
 ForwardLevelIterator::ForwardLevelIterator(Node* node)  {
     // Initialize the stack with the given node
-    m_ptr.push(node);
+    if(node){ 
+        m_ptr.push(node); 
+    } 
 }
 ForwardLevelIterator::~ForwardLevelIterator() { 
 }
@@ -117,7 +122,7 @@ Node* ForwardLevelIterator::operator->() {
 
 ForwardLevelIterator& ForwardLevelIterator::operator++() {
     // Pop the top element of the stack
-    Node* current = m_ptr.front();
+    Node* current = m_ptr.front(); 
     m_ptr.pop();
 
     // Push the children of the current node onto the stack
@@ -139,7 +144,10 @@ ForwardLevelIterator& ForwardLevelIterator::operator--() {
 bool ForwardLevelIterator::operator==(const GraphIterator& other) {
 
     // Compare the stacks of the two iterators by comparing the sizes, the current top reference 
-    if(auto other_cast = dynamic_cast<const ForwardLevelIterator*>(&other)) {
+    if(auto other_cast = dynamic_cast<const ForwardLevelIterator*>(&other)) { 
+        if (m_ptr.empty() && other_cast->m_ptr.empty()) {
+            return true;
+        }
         return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.front() == other_cast->m_ptr.front() && m_ptr.front() == other_cast->m_ptr.front();
     }
     return false ;
@@ -147,10 +155,7 @@ bool ForwardLevelIterator::operator==(const GraphIterator& other) {
 
 bool ForwardLevelIterator::operator!=(const GraphIterator& other) {
     // Compare the queues of the two iterators 
-    if(auto other_cast = dynamic_cast<const ForwardLevelIterator*>(&other)) {
-        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.front() != other_cast->m_ptr.front() || m_ptr.front() != other_cast->m_ptr.front();
-    }
-    return false ;
+    return !this->operator==(other);
 }
 
 Graph::Graph(Node* root) : m_root(root) {
@@ -159,17 +164,7 @@ ForwardLevelIterator Graph::begin() {
     return ForwardLevelIterator(m_root);
 }
 ForwardLevelIterator Graph::end() { // ! TODO : Implement this
-    std::queue<Node*> m_ptr;
-    Node* current = nullptr;
-    m_ptr.push(m_root);
-    while(!m_ptr.empty()) {
-        current = m_ptr.front();
-        m_ptr.pop() ; 
-        for (auto& user : current->Users()) {
-            m_ptr.push(user);
-        }
-    }
-    return ForwardLevelIterator(current);
+    return ForwardLevelIterator(nullptr);
 }
 ReverseLevelIterator Graph::rbegin() { // ! TODO : Incorporate type filtering 
     return ReverseLevelIterator(m_root, ""); // 
@@ -183,6 +178,13 @@ Node* Graph::GetRoot() {
 }
 
 void Graph::PrintGraph() {
+
+    int data_node = 0 ; 
+    int op_node = 0 ;  
+    int addcount = 0 ; 
+    int subcount = 0 ;  
+    int matmul2xcount=  0 ; 
+    int matmul3xcount=  0 ; 
     std::unordered_map<Node*, int> level;
     std::queue<Node*> q;
 
@@ -196,15 +198,22 @@ void Graph::PrintGraph() {
         std::cout << "Node " << node <<  " node type: " << node->GetAttribute("node_type") << " value type: " << node->GetAttribute("value_type"); 
         if (node->GetAttribute("node_type")=="op") { 
             OpNode* op = dynamic_cast<OpNode*>(node);
+            op_node++ ; 
             if (op->GetOpcode() == Opcode_t::ADD) { 
                 std::cout << " Operation type:  ADD ";
+                addcount++ ;
             } else if (op->GetOpcode() == Opcode_t::SUB) { 
                 std::cout << " Operation type:  SUB ";
+                subcount++ ;
             } else if (op->GetOpcode() == Opcode_t::MMUL_2x) { 
+                matmul2xcount++ ;
                 std::cout << " Operation type:  MMUL_2x ";
             } else { 
+                matmul3xcount++ ;
                 std::cout << " Operation type:  MMUL_3x ";
             } 
+        } else if (node->GetAttribute("node_type")=="data"){ 
+            data_node++ ; 
         } 
         std::cout << std::endl;
 
@@ -216,6 +225,12 @@ void Graph::PrintGraph() {
             }
         }
     }
+    std::cout << "Number of data nodes: " << data_node << "Number of op nodes: " << op_node << std::endl ; 
+    std::cout << "Number of Addition nodes: " << addcount << std::endl ;
+    std::cout << "Number of Subtraction nodes: " << subcount << std::endl ; 
+    std::cout << "Number of 2x2 matmul nodes: " << matmul2xcount << std::endl ;
+    std::cout << "Number of 3x3 matmul nodes: " << matmul3xcount << std::endl ;
+
 }
 void Graph::PrintGraphReverse() {
     std::unordered_map<Node*, int> level;

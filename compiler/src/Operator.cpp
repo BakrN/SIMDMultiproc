@@ -49,19 +49,11 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) 
     assert(op1type == "vec" || op1type=="toep") ;
     if (op0type == "toep" && op1type == "toep") { 
         // create new toep 
-        Toep2d* toep = static_cast<Toep2d*>(operand0->GetValue()) ;
             m_result = static_cast<void*>(new Toep2d(std::remove_const_t<BufferRef&>(ref)));    
         this->AddAttribute("value_type", "toep") ;
     } 
-    else if (op0type == "vec" && op1type == "vec") { 
-        // create new vec 
-        Vec1d* vec= static_cast<Vec1d*>(operand0->GetValue()) ;
-        m_result = static_cast<void*>(new Vec1d(ref));    
-        this->AddAttribute("value_type", "vec") ;
-    }  
     else { 
         // create new vec 
-        Vec1d* vec= static_cast<Vec1d*>(operand0->GetValue()) ;
         m_result = static_cast<void*>(new Vec1d(ref));    
         this->AddAttribute("value_type", "vec") ;
     }

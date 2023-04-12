@@ -16,5 +16,7 @@ product_processor
 *.log
 hardware/sim/* 
 software/out/* 
-compiler/lib/* 
+compiler/lib/*  
+compiler/build/*
+compiler/compile_commands.json
 __pycache__
