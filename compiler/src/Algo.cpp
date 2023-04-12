@@ -32,16 +32,29 @@ Graph* DecompositionGraphBuilder::BuildGraph() {
                 // check if we reached size 2 
                 Toep2d* toep = static_cast<Toep2d*>(pnode->GetToepNode()->GetValue());  
                 visited.insert(pnode) ;
-                if (toep->Size() > BASE_MMUL_2x_SIZE) { 
-                    // split node 
-                    SplitTwoWay(pnode) ;
-                } else { 
-                    OpNode* op = new OpNode(Opcode_t::MMUL_2x) ;
-                    Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
-                    BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
-                    op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
-                    continue ; 
-                } 
+                if (toep->Size() %2 == 0) {
+                    if (toep->Size() > BASE_MMUL_2x_SIZE) { 
+                        // split node 
+                        SplitTwoWay(pnode) ;
+                    } else { 
+                        OpNode* op = new OpNode(Opcode_t::MMUL_2x) ;
+                        Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
+                        BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
+                        op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
+                        continue ; 
+                    } 
+                } else if (toep->Size() %3 == 0) { 
+                    if (toep->Size() > BASE_MMUL_3x_SIZE) { 
+                        // split node 
+                        SplitThreeWay(pnode) ;
+                    } else { 
+                        OpNode* op = new OpNode(Opcode_t::MMUL_3x) ;
+                        Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
+                        BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
+                        op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
+                        continue ; 
+                    } 
+                }
             }
         }
 

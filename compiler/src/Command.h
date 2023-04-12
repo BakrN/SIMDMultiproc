@@ -25,7 +25,7 @@ class DecomposerCommandGenerator{
         std::vector<Command>& GetCommands() ;
     private: 
         std::vector<Command> m_commands ;  
-        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int> enqueued , int dep_id = 0) ;  
+        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int>& enqueued , int dep_id = 0) ;  
         Node* m_root;   
 };
 

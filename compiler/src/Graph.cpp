@@ -121,16 +121,17 @@ Node* ForwardLevelIterator::operator->() {
 }
 
 ForwardLevelIterator& ForwardLevelIterator::operator++() {
-    // Pop the top element of the stack
-    Node* current = m_ptr.front(); 
+    // Get the next node in the queue
+    Node* curr = m_ptr.front();
     m_ptr.pop();
-
-    // Push the children of the current node onto the stack
-    for (Node* child : current->Users()) {
-        m_ptr.push(child);
+    // Add its unvisited neighbors to the queue
+    for (Node* neighbor : curr->Users()) {
+        if (m_visited.insert(neighbor).second) {
+            m_ptr.push(neighbor);
+        }
     }
-    // Return a reference to this iterator
     return *this;
+
 }
 
 ForwardLevelIterator& ForwardLevelIterator::operator--() {
@@ -177,6 +178,8 @@ Node* Graph::GetRoot() {
     return m_root;
 }
 
+
+/*
 void Graph::PrintGraph() {
 
     int data_node = 0 ; 
@@ -231,7 +234,7 @@ void Graph::PrintGraph() {
     std::cout << "Number of 2x2 matmul nodes: " << matmul2xcount << std::endl ;
     std::cout << "Number of 3x3 matmul nodes: " << matmul3xcount << std::endl ;
 
-}
+}*/
 void Graph::PrintGraphReverse() {
     std::unordered_map<Node*, int> level;
     std::queue<Node*> q;
@@ -266,4 +269,48 @@ void Graph::PrintGraphReverse() {
             }
         }
     }
+}
+
+
+
+void Graph::PrintGraph() {
+
+    int data_node = 0 ; 
+    int op_node = 0 ;  
+    int addcount = 0 ; 
+    int subcount = 0 ;  
+    int matmul2xcount=  0 ; 
+    int matmul3xcount=  0 ; 
+    
+    for (auto it = this->begin(); it != this->end() ; ++it) { 
+        Node* node = &(*it);
+        std::cout << "Node " << node <<  " node type: " << node->GetAttribute("node_type") << " value type: " << node->GetAttribute("value_type"); 
+        if (node->GetAttribute("node_type")=="op") { 
+            OpNode* op = dynamic_cast<OpNode*>(node);
+            op_node++ ; 
+            if (op->GetOpcode() == Opcode_t::ADD) { 
+                std::cout << " Operation type:  ADD ";
+                addcount++ ;
+            } else if (op->GetOpcode() == Opcode_t::SUB) { 
+                std::cout << " Operation type:  SUB ";
+                subcount++ ;
+            } else if (op->GetOpcode() == Opcode_t::MMUL_2x) { 
+                matmul2xcount++ ;
+                std::cout << " Operation type:  MMUL_2x ";
+            } else { 
+                matmul3xcount++ ;
+                std::cout << " Operation type:  MMUL_3x ";
+            } 
+        } else if (node->GetAttribute("node_type")=="data"){ 
+            data_node++ ; 
+        } 
+        std::cout << std::endl;
+        
+    }
+    std::cout << "Number of data nodes: " << data_node << "Number of op nodes: " << op_node << std::endl ; 
+    std::cout << "Number of Addition nodes: " << addcount << std::endl ;
+    std::cout << "Number of Subtraction nodes: " << subcount << std::endl ; 
+    std::cout << "Number of 2x2 matmul nodes: " << matmul2xcount << std::endl ;
+    std::cout << "Number of 3x3 matmul nodes: " << matmul3xcount << std::endl ;
+
 }

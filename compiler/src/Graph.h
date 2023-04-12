@@ -3,6 +3,7 @@
 #include <string>
 #include <vector> 
 #include <unordered_map>
+#include <unordered_set>
 #include <algorithm> 
 #include <queue> 
 
@@ -58,7 +59,7 @@ class ForwardLevelIterator : public GraphIterator{
         virtual bool operator!=(const GraphIterator&) override; 
     private:  
         std::queue<Node*> m_ptr;   
-    
+        std::unordered_set<Node*> m_visited; 
 }; 
 
 class ReverseLevelIterator : public GraphIterator{ 

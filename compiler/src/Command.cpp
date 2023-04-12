@@ -2,7 +2,7 @@
 #include "Graph.h"
 #include <unordered_map>
 static int s_max_cmd_elements = 100 ; 
-static int cmd_id = 0 ; 
+static int CMD_ID = 0 ; 
 Command CreateCommand(OpNode* node , int cmd_id , int dep_id ) {
     int addr0 , addr1 , wrbackaddr , count; 
     Toep2d* MAT = nullptr ;
@@ -70,18 +70,21 @@ DecomposerCommandGenerator::~DecomposerCommandGenerator() {
 
 }
 
-void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int> enqueued, int dep_id) {
+void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int>& enqueued, int dep_id) {
 
-    Command cmd = CreateCommand(static_cast<OpNode*>(node) , cmd_id , dep_id) ; 
+    Command cmd = CreateCommand(static_cast<OpNode*>(node) , CMD_ID, dep_id) ; 
     m_commands.push_back(cmd) ; 
-    enqueued[node] = cmd_id ; 
-    cmd_id++ ;  
+    enqueued[node] = CMD_ID; 
+    int ID = CMD_ID ;  
+    CMD_ID++ ;  
     std::queue<Node*> dep_cmds; 
-    std::queue<Node*> search_nodes; 
-    bool first_search = true ;
-    while(!search_nodes.empty() && first_search) { 
-        first_search = false ;
-        for ( auto& user : node->Users() ) {
+    std::queue<Node*> search_nodes;  
+    search_nodes.push(node) ;
+
+    while(!search_nodes.empty() ) { 
+        Node* current = search_nodes.front() ;
+        search_nodes.pop() ; 
+        for ( auto& user : current ->Users() ) {
             if ( user->GetAttribute("node_type") == "op") { 
                 dep_cmds.push(user) ;
             }  else { 
@@ -90,10 +93,12 @@ void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered
         }
     } 
     // call previous function on all command in dep_cmds
-    Node* dep_cmd = dep_cmds.front() ;
-    dep_cmds.pop(); 
-    if (!dep_cmds.empty()) { 
-        FindAndEnqueueUsers(dep_cmds.front() , enqueued , cmd_id-1) ; 
+    while (!dep_cmds.empty()) { 
+        Node* dep_cmd = dep_cmds.front() ;
+        dep_cmds.pop(); 
+        if (enqueued.find(dep_cmd) == enqueued.end()) { 
+            FindAndEnqueueUsers(dep_cmd , enqueued, ID) ; 
+        }
     }
 }
 
@@ -108,27 +113,28 @@ void DecomposerCommandGenerator::Generate() {
                                                 // decomposition 
 
     for ( auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
+
         if ( (*it).GetAttribute("node_type") == "op") {
             // create command 
             Node* node = &(*it) ;
             if (enqueued.find(node) != enqueued.end()) { 
                 continue ; 
             }
-            FindAndEnqueueUsers(node , enqueued ,cmd_id) ;
+            FindAndEnqueueUsers(node , enqueued ,CMD_ID) ;
 
         }
     }
-    // vec command generation 
-    for ( auto it = vec_graph->begin() ; it != vec_graph->end() ; ++it) { 
+    //// vec command generation 
+    //for ( auto it = vec_graph->begin() ; it != vec_graph->end() ; ++it) { 
 
-    }
-    // recomposition  
-    for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
+    //}
+    //// recomposition  
+    //for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
 
-    }
-    delete recomp_graph ; 
-    delete toep_graph  ; 
-    delete vec_graph; 
+    //}
+    //delete recomp_graph ; 
+    //delete toep_graph  ; 
+    //delete vec_graph; 
 } 
 
 std::ostream& operator<<(std::ostream& os , const Command& cmd ) { 

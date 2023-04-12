@@ -35,7 +35,7 @@ unit_t* get_mat(unit_t* toep, int size) {// get the matrix from the toep
 }
 
 int main() {   
-    int size = 32;
+    int size = 8;
     unit_t* toep = create_toep(size) ;
     unit_t* vec = create_vec(size) ;
     unit_t* result = new unit_t[size] ;
@@ -67,42 +67,12 @@ int main() {
     std::cout << "Finished decomposition graph builder" << std::endl;
     Graph* toep_graph = new Graph(static_cast<ProductNode*>(graph->GetRoot())->GetToepNode());
     Graph* vec_graph  = new Graph(static_cast<ProductNode*>(graph->GetRoot())->GetVecNode());
-    DecomposerCommandGenerator toep_command_generator(toep_graph->GetRoot()); 
-    toep_graph->PrintGraph() ;
-    // testing iterator 
-
-    
-    
-    
-    
-    
-    
-    //for (auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
-    //    if ((*it).GetAttribute("node_type") == "op"){ 
-    //        op_node++; 
-    //        if(static_cast<OpNode&>(*it).GetOpcode() == Opcode_t::ADD) { 
-    //            addcount++ ; 
-    //        }
-    //        else if(static_cast<OpNode&>(*it).GetOpcode() == Opcode_t::SUB) { 
-    //            subcount++ ; 
-    //        }
-    //        else if (static_cast<OpNode&>(*it).GetOpcode() == Opcode_t::MMUL_2x) { 
-    //            matmul2xcount++ ; 
-    //        }
-    //        else if (static_cast<OpNode&>(*it).GetOpcode() == Opcode_t::MMUL_3x) { 
-    //            matmul3xcount++ ; 
-    //        }
-    //    }  else { 
-    //        if ((*it).GetAttribute("node_type") == "data") { 
-    //            data_node++ ; 
-    //        }
-    //    } 
-    //}
-
-    /*toep_command_generator.Generate() ; 
+    DecomposerCommandGenerator command_generator(graph->GetRoot()); 
+    //toep_graph->PrintGraph() ;
+    command_generator.Generate() ; 
     std::cout << "Printing toep commands" << std::endl;
-    for (auto& command : toep_command_generator.GetCommands()) { 
+    for (auto& command : command_generator.GetCommands()) { 
         std::cout << command << std::endl ; 
-    }*/ 
+    } 
     return 0 ; 
 } 
