@@ -49,7 +49,9 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) 
     assert(op1type == "vec" || op1type=="toep") ;
     if (op0type == "toep" && op1type == "toep") { 
         // create new toep 
-            m_result = static_cast<void*>(new Toep2d(std::remove_const_t<BufferRef&>(ref)));    
+        Toep2d* toep = static_cast<Toep2d*>(operand0->GetValue()) ;
+
+        m_result = static_cast<void*>(new Toep2d(std::remove_const_t<BufferRef&>(ref), toep->Size()));    
         this->AddAttribute("value_type", "toep") ;
     } 
     else { 

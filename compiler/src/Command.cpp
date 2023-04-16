@@ -1,8 +1,9 @@
 #include "Command.h"
+#include "Algo.h"
 #include "Graph.h"
 #include <unordered_map>
 static int s_max_cmd_elements = 100 ; 
-static int CMD_ID = 0 ; 
+static int CMD_ID = 1 ; 
 Command CreateCommand(OpNode* node , int cmd_id , int dep_id ) {
     int addr0 , addr1 , wrbackaddr , count; 
     Toep2d* MAT = nullptr ;
@@ -69,8 +70,8 @@ DecomposerCommandGenerator::DecomposerCommandGenerator(Node* node) {
 DecomposerCommandGenerator::~DecomposerCommandGenerator() {  
 
 }
-
-void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int>& enqueued, int dep_id) {
+// toep depends on vec 
+void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int>& enqueued, int dep_id, GEN_MODE mode){ 
 
     Command cmd = CreateCommand(static_cast<OpNode*>(node) , CMD_ID, dep_id) ; 
     m_commands.push_back(cmd) ; 
@@ -86,6 +87,11 @@ void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered
         search_nodes.pop() ; 
         for ( auto& user : current ->Users() ) {
             if ( user->GetAttribute("node_type") == "op") { 
+                if (mode != GEN_MODE::VEC) { 
+                    if (static_cast<OpNode*>(user)->GetOpcode() == Opcode_t::MMUL_2x || static_cast<OpNode*>(user)->GetOpcode() == Opcode_t::MMUL_3x) { 
+                        continue ; 
+                    }
+                }
                 dep_cmds.push(user) ;
             }  else { 
                 search_nodes.push(user) ;
@@ -97,13 +103,17 @@ void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered
         Node* dep_cmd = dep_cmds.front() ;
         dep_cmds.pop(); 
         if (enqueued.find(dep_cmd) == enqueued.end()) { 
-            FindAndEnqueueUsers(dep_cmd , enqueued, ID) ; 
+            //  if vec with size <= 2 and %2 ==0 or size <= 3 and %3 == 0 then dep cmd is toeplitz 
+            //  if matmul then dep cmd is vec  
+            //  if recomp 
+            FindAndEnqueueUsers(dep_cmd , enqueued, ID, mode) ; // prev
+            // FindAndEnqueueUsers(dep_cmd , enqueued, ID, exclude_mamtul=true) ; // prev
         }
     }
 }
 
 
-// assumes 1 to 1 dependency relationships  
+// assumes 1 to 1 dependency relationships   (work on dep later
 void DecomposerCommandGenerator::Generate() { 
     // last 2x2/3x3 mult depends on last vec decomposition depends on toeplitz decomposition
     Graph* recomp_graph = new Graph(m_root); 
@@ -114,24 +124,44 @@ void DecomposerCommandGenerator::Generate() {
 
     for ( auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
 
+        if ( (*it).GetAttribute("node_type") == "op" && (*it).GetAttribute("value_type") == "toep" ) {
+            // create command 
+            Node* node = &(*it) ;
+            if (enqueued.find(node) != enqueued.end()) { 
+                continue ; 
+            }
+            FindAndEnqueueUsers(node , enqueued ,0, GEN_MODE::TOEP) ;
+
+        }
+    }
+    //// vec command generation 
+    enqueued.clear(); 
+    for ( auto it = vec_graph->begin() ; it != vec_graph->end() ; ++it) { 
+
         if ( (*it).GetAttribute("node_type") == "op") {
             // create command 
             Node* node = &(*it) ;
             if (enqueued.find(node) != enqueued.end()) { 
                 continue ; 
             }
-            FindAndEnqueueUsers(node , enqueued ,CMD_ID) ;
+            FindAndEnqueueUsers(node , enqueued ,0,  GEN_MODE::VEC) ;
 
         }
     }
-    //// vec command generation 
-    //for ( auto it = vec_graph->begin() ; it != vec_graph->end() ; ++it) { 
+    //////// recomposition  
+   enqueued.clear(); 
+   for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
+       // 
+       if ( (*it).GetAttribute("node_type") == "op" && (static_cast<OpNode&>((*it)).GetOpcode() == Opcode_t::SUB || static_cast<OpNode&>((*it)).GetOpcode() == Opcode_t::ADD)) {
+           // create command  
+           Node* node = &(*it) ;
+           if (enqueued.find(node) != enqueued.end()) { 
+               continue ; 
+           }
+           FindAndEnqueueUsers(node , enqueued ,0 ,  GEN_MODE::RECOMPOSE) ;
 
-    //}
-    //// recomposition  
-    //for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
-
-    //}
+       }
+   } 
     //delete recomp_graph ; 
     //delete toep_graph  ; 
     //delete vec_graph; 

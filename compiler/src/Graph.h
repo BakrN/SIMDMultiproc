@@ -6,7 +6,7 @@
 #include <unordered_set>
 #include <algorithm> 
 #include <queue> 
-
+#include <stack> 
 
 class Node { 
     public: 
@@ -64,7 +64,7 @@ class ForwardLevelIterator : public GraphIterator{
 
 class ReverseLevelIterator : public GraphIterator{ 
 public: 
-    ReverseLevelIterator(Node* node, const std::string& type = "", bool auto_traverse =true) ;// Filter specific node type with type
+    ReverseLevelIterator(Node* node) ;// Filter specific node type with type
     ~ReverseLevelIterator() ;
     virtual Node& operator*() override;  
     virtual Node* operator->() override ;  
@@ -73,7 +73,7 @@ public:
     virtual bool operator==(const GraphIterator&) override; 
     virtual bool operator!=(const GraphIterator&) override; 
 private:  
-    std::queue<Node*> m_ptr;
+    std::stack<Node*> m_ptr;
     std::string m_type;
 };
 
@@ -82,9 +82,9 @@ class Graph {
     public: 
         Graph(Node* root) ;
         ForwardLevelIterator begin() ;  
-        ForwardLevelIterator end()   ;  // take rightmost  node 
+        ForwardLevelIterator end()   ;  // nullptr
         ReverseLevelIterator rbegin() ; 
-        ReverseLevelIterator rend()   ;  // take rightmost  node  
+        ReverseLevelIterator rend()   ;  // nullptr
         Node* GetRoot() ;
         void PrintGraph() ; 
         void PrintGraphReverse() ; 

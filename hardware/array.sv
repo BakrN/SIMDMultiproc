@@ -1,55 +1,76 @@
-// SIMD adder/multiplier array 
-module simd_arr#(parameter width = 4, parameter operand_width = 32) (  
-    opcode, // ADD , MUL , sub (in1 - in2)
-    i_in1,  
-    i_in2, 
-    o_res
+// MAC unit / adder unit . 
+// option to have seperate adder and mac unit vs having a multiplixer to adder
+// inputs 
+// For now 3x3 
+
+module simd_arr#(parameter UNIT_SIZE= 32) (  
+opcode, // Add / sub / matmul 
+i_in1,  // matrix or vector
+i_in2,  // vector
+o_res
 ); 
-    localparam ow = operand_width; 
-    localparam w = width;
-    localparam op_add = 2'b00 ; 
-    localparam op_sub = 2'b01 ; 
-    localparam op_mul = 2'b10 ; 
-    
+input opcode_t opcode ;
+input [UNIT_SIZE*8-1:0] i_in1; // at least for 3x3 muls
+input [UNIT_SIZE*8-1:0] i_in2;
+output [UNIT_SIZE*8-1:0] o_res;
+// What we need: matmul unit and adder unit
+logic [UNIT_SIZE-1:0] vec [2:0];
+assign {vec[0] , vec[1], vec[2]} = i_in2[UNIT_SIZE*8-1:UNIT_SIZE*5];
+logic [2:0][UNIT_SIZE-1:0] mat [2:0];
 
-    input  logic [(w*ow-1):0] i_in1 ; 
-    input  logic [(w*ow-1):0] i_in2 ;    
-    input  logic [1:0] opcode;   
-    output logic [(w*ow-1):0] o_res ;  
-    
-    logic signed [ow-1:0] w_adder_out [w-1:0];  
-    logic signed [ow-1:0] w_mul_out   [w-1:0]; 
-    // defining operands
-    logic signed [ow-1:0] operands_0 [w-1:0];  
-    logic signed [ow-1:0] operands_1 [w-1:0]; 
+logic [UNIT_SIZE-1:0] adder_out [7:0] ;
 
-     
-    generate  
-        for (genvar i = w-1 ;  i>=0; i--) begin 
-            assign operands_0[i] = i_in1[((i+1)*ow-1):((i)*ow)] ;
-            assign operands_1[i] = i_in2[((i+1)*ow-1):((i)*ow)] ;
+generate 
+for (genvar row = 0 ; row < 3 ; row++) begin 
+    for (genvar col = 0 ; col < 3 ; col++) begin 
+        assign mat[i][j] = i_mat[2 - row + col];
+    end
+end
+endgenerate
+
+// addition/sub/acc unit (8 adders)
+always_comb begin
+    if(opcode == 0) begin // add
+        for (int i = 0 ; i < 8 ; ++i)begin
+            adder_out[i] = i_in1[(8-i)*UNIT_SIZE-1:(8-i-1)*UNIT_SIZE] + i_in2[(8-i)*UNIT_SIZE-1:(8-i-1)*UNIT_SIZE];
         end
-    endgenerate
-    generate 
-        for (genvar i = 0 ; i < w ; i++)begin 
-            always_comb begin 
-                if (opcode == op_add) begin 
-                    w_adder_out[i] = operands_0[i] + operands_1[i]; 
-                end else begin 
-                    w_adder_out[i] = operands_0[i] - operands_1[i]; 
-                end 
-            end
+    end else if (opcode==1) begin // sub
+        for (int i = 0 ; i < 8 ; ++i) begin
+            adder_out[i] = i_in1[(8-i)*UNIT_SIZE-1:(8-i-1)*UNIT_SIZE] - i_in2[(8-i)*UNIT_SIZE-1:(8-i-1)*UNIT_SIZE];
         end
-    endgenerate 
-    
-    assign w_mul_out[3]   = i_in1[(w*ow-1):((w-1)*ow)]     * i_in2[(w*ow-1):((w-1)*ow)]     ;  
-    assign w_mul_out[2]   = i_in1[((w-1)*ow-1):((w-2)*ow)] * i_in2[((w-1)*ow-1):((w-2)*ow)] ; 
-    assign w_mul_out[1]   = i_in1[((w-2)*ow-1):((w-3)*ow)] * i_in2[((w-2)*ow-1):((w-3)*ow)] ; 
-    assign w_mul_out[0]   = i_in1[((w-3)*ow-1):((w-4)*ow)] * i_in2[((w-3)*ow-1):((w-4)*ow)] ; 
+    end else begin // mat mul
+    // matrix mul result will be stored in adder_out [0] , [1] , [2]
+    //                                               Y2    Y1     Y0
+        adder[3] = mul_int[0][0] + mul_int[0][1];
+        adder[2] = adder[3] + mul_int[0][2]; // Y0
+        adder[4] = mul_int[1][0] + mul_int[1][1] ;
+        adder[1] =  adder[4]+ mul_int[1][2]; // Y1 ;
+        adder[5] = mul_int[2][0] + mul_int[2][1] ;
+        adder[0] =  adder[5]+ mul_int[2][2]; // Y2 ;
+    end
+end
 
-    assign o_res = (opcode==op_mul) ? {w_mul_out[3], w_mul_out[2], w_mul_out[1], w_mul_out[0]} : 
-                                    {w_adder_out[3], w_adder_out[2], w_adder_out[1], w_adder_out[0]} ;   
-                                    
 
 
-endmodule 
+// multiply unit (element-wise) 
+logic [2:0][UNIT_SIZE-1:0] mul_int [2:0];
+always_comb begin
+    mul_int[0][0] = vec[0] * mat[0][0];
+    mul_int[0][1] = vec[1] * mat[0][1];
+    mul_int[0][2] = vec[2] * mat[0][2];
+    mul_int[1][0] = vec[0] * mat[1][0];
+    mul_int[1][1] = vec[1] * mat[1][1];
+    mul_int[1][2] = vec[2] * mat[1][2];
+    mul_int[2][0] = vec[0] * mat[2][0];
+    mul_int[2][1] = vec[1] * mat[2][1];
+    mul_int[2][2] = vec[2] * mat[2][2];
+end
+generate
+for (genvar i = 0 ; i < 8 ; i++) begin
+    assign o_res[(8-i)*UNIT_SIZE-1:(8-i-1)*UNIT_SIZE]= adder_out[i] ;
+end
+endgenerate
+
+
+
+endmodule

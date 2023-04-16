@@ -1,6 +1,13 @@
 #pragma once 
 #include "Operator.h" 
 #include "Graph.h"
+
+// Recomp -> matmul -> vec -> toep
+enum class GEN_MODE{ 
+    RECOMPOSE, 
+    TOEP, 
+    VEC
+} ; 
 struct Command {  
     int id ; 
     int dep ; 
@@ -23,9 +30,16 @@ class DecomposerCommandGenerator{
         ~DecomposerCommandGenerator() ; 
         void Generate() ;  
         std::vector<Command>& GetCommands() ;
+        std::vector<Command>& GetToepCommands() ; 
+        std::vector<Command>& GetVecCommands() ; 
+        std::vector<Command>& GetRecompCommands() ; 
     private: 
         std::vector<Command> m_commands ;  
-        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int>& enqueued , int dep_id = 0) ;  
+        std::vector<Command> m_toep_commands ;  
+        std::vector<Command> m_vec_commands ;
+        std::vector<Command> m_recomp_commands;  
+
+        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int>& enqueued , int dep_id , GEN_MODE mode ) ;  
         Node* m_root;   
 };
 

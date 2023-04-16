@@ -34,5 +34,5 @@ class BufferRef {
         Buffer* m_buf ;
         uint32_t m_addr ; 
         uint32_t m_size ; 
-        bool m_reserved ; 
+        int start ; 
 } ;

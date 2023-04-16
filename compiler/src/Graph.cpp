@@ -37,31 +37,27 @@ Node* Node::GetParent() {
 }
 ReverseLevelIterator::~ReverseLevelIterator() {
 }
-ReverseLevelIterator::ReverseLevelIterator(Node* node, const std::string& type, bool auto_traverse) : m_type(type) {
-
+ReverseLevelIterator::ReverseLevelIterator(Node* node ) {
+    if (node){ 
     std::queue<Node*> q;
     q.push(node);
     while (!q.empty()) {
         Node* n = q.front();
         q.pop();
-        if ( type.empty() || n->GetAttribute("node_type") == type) { // Only add nodes of specified type
-
-            m_ptr.push(n);
-            if (!auto_traverse) 
-                break ; 
-        }
-        for (auto& user : n->Users()) {
+        m_ptr.push(n);
+        for (auto& user : n->Inputs()) {
             q.push(user);
         }
-    }
+    }  
+   } 
 }
 
 Node& ReverseLevelIterator::operator*() {
-    return *m_ptr.front();
+    return *m_ptr.top();
 }
 
 Node* ReverseLevelIterator::operator->() {
-    return m_ptr.front();
+    return m_ptr.top();
 }
 
 ReverseLevelIterator& ReverseLevelIterator::operator++() {
@@ -70,7 +66,7 @@ ReverseLevelIterator& ReverseLevelIterator::operator++() {
 }
 
 ReverseLevelIterator& ReverseLevelIterator::operator--() {
-    Node* n = m_ptr.front();
+    Node* n = m_ptr.top();
     std::vector<Node*>& inputs = n->Inputs();
     if (!inputs.empty()) {
         std::sort(inputs.begin(), inputs.end(), [](Node* a, Node* b) {
@@ -86,19 +82,17 @@ ReverseLevelIterator& ReverseLevelIterator::operator--() {
 }
 
 bool ReverseLevelIterator::operator==(const GraphIterator& other) {
-
-    // Compare the stacks of the two iterators by comparing the sizes, the current top reference 
-    if(auto other_cast = dynamic_cast<const ReverseLevelIterator*>(&other)) {
-        return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.front() == other_cast->m_ptr.front() && m_ptr.front() == other_cast->m_ptr.front();
-    }
-    return false ;
+    if(auto other_cast = dynamic_cast<const ReverseLevelIterator*>(&other)) { 
+            if (m_ptr.empty() && other_cast->m_ptr.empty()) {
+                return true;
+            }
+            return m_ptr.size() == other_cast->m_ptr.size() && m_ptr.top() == other_cast->m_ptr.top() && m_ptr.top() == other_cast->m_ptr.top();
+        }
+        return false ;
 }
 
 bool ReverseLevelIterator::operator!=(const GraphIterator& other) {
-    if(auto other_cast = dynamic_cast<const ReverseLevelIterator*>(&other)) {
-        return m_ptr.size() != other_cast->m_ptr.size() || m_ptr.front() != other_cast->m_ptr.front() || m_ptr.front() != other_cast->m_ptr.front();
-    }
-    return false ;
+    return !(*this == other);
 }
 
 
@@ -168,10 +162,10 @@ ForwardLevelIterator Graph::end() { // ! TODO : Implement this
     return ForwardLevelIterator(nullptr);
 }
 ReverseLevelIterator Graph::rbegin() { // ! TODO : Incorporate type filtering 
-    return ReverseLevelIterator(m_root, ""); // 
+    return ReverseLevelIterator(m_root); // 
 }
 ReverseLevelIterator Graph::rend() { // ! TODO : Implement this
-    return ReverseLevelIterator(nullptr, "");
+    return ReverseLevelIterator(nullptr);
 }
 
 Node* Graph::GetRoot() {

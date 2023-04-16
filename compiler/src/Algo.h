@@ -10,7 +10,7 @@
 
 class DecompositionGraphBuilder { 
     public: 
-        DecompositionGraphBuilder(Buffer& buffer, ProductNode* node) ;   
+        DecompositionGraphBuilder( ProductNode* node) ;   
         ~DecompositionGraphBuilder() ;  
         Graph* BuildGraph() ; 
 
@@ -18,7 +18,6 @@ class DecompositionGraphBuilder {
         void SplitTwoWay(ProductNode* node) ;
         void SplitThreeWay(ProductNode* node) ;
         ProductNode* m_root; 
-        Buffer&  m_buffer;  
         Graph* m_graph;
         Graph* m_recomp_graph;
 } ;

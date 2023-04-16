@@ -13,14 +13,15 @@ class Toep2d {
         Toep2d(Buffer* buf, int size) { 
             m_size = size ; 
             // should be place contiguously in memory
-            m_col  = std::make_unique<Vec1d>(buf, size-1) ; 
+            m_col  = std::make_unique<Vec1d>(buf, size-1) ;  
             m_row  = std::make_unique<Vec1d>(buf, size) ;   
         }  
         Toep2d() : m_col(nullptr), m_row(nullptr) , m_size(0) {}; 
-        Toep2d(BufferRef& ref) {
-            m_size =  (ref.GetSize()+1)/2 ;   
+        Toep2d(BufferRef& ref, int mat_size) {
+            m_size= mat_size ;    
             m_col = std::make_unique<Vec1d>(BufferRef(ref.GetBuffer(), ref.GetAddr(), m_size-1)) ; 
             m_row = std::make_unique<Vec1d>(BufferRef(ref.GetBuffer(), ref.GetAddr()+m_size, m_size)) ; 
+            // col and row have to be in contigous memory
         } 
         ~Toep2d() { 
             m_col.reset() ; 
@@ -32,9 +33,25 @@ class Toep2d {
             Toep2d* toep = new Toep2d() ;  
             // top left sub matrix, no need to allocate new mem to buffer 
             // Let's assume x and y are 0  
+            //std::cout << "current row addr: " << m_row->GetRef().GetAddr() << std::endl ;
+            //std::cout << "current col addr: " << m_col->GetRef().GetAddr() << std::endl ;
             int col_size =  ((m_size - (row+size)) +size >= m_size) ? row+size-1: size; 
-            Vec1d* vcol = m_col->operator()(m_size-(row+size) , col_size) ;  // No lower bound check
-            Vec1d* vrow = m_row->operator()(col, size) ; // Here I'm just assuming it works 
+            //std::cout << "COL SIZE: " << col_size << std::endl ;
+            Vec1d* vcol, *vrow; 
+            if (row>col ) { 
+                // all values in coL  ?  
+                int row_index = m_size - (row-col) -1  ; 
+                int col_index = row_index+1 - (size) ;  
+                // what is row 
+                vrow = m_col->operator()(row_index, size) ; 
+                vcol = m_col->operator()(col_index, size-1) ;  
+            } 
+            else { 
+
+                vrow = m_row->operator()(col-row, size) ;  
+                vcol = m_row->operator()((col-row)-(size-1), size-1) ;  
+            } 
+            
             toep->SetCol(vcol) ;
             toep->SetRow(vrow) ; 
             toep->m_size = size ;

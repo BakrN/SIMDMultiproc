@@ -10,14 +10,14 @@ class Vec1d {
             return *this ; 
         }
         Vec1d(Buffer* buffer, uint32_t size) : m_ref(buffer, size) {
-            m_size = size ; 
+            m_size = size ;   
         }
         Vec1d(const BufferRef& ref) : m_ref(ref) {  
             m_size = ref.GetSize() ;
         }
         //  returns new vector with addr and size
         Vec1d* operator()(uint32_t index, uint32_t size) { 
-            assert(m_ref.GetAddr()+index+ size <= m_ref.GetAddr() + m_size) ;
+            // assert(m_ref.GetAddr()+index+ size <= m_ref.GetAddr() + m_size) ;
             Vec1d* vec = new Vec1d(BufferRef(m_ref.GetBuffer(), m_ref.GetAddr()+index, size) ); 
             return vec ;
         }

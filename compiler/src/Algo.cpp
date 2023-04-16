@@ -3,7 +3,7 @@
 #include "Operator.h"
 #include <stdexcept>
 #include <unordered_set>
-DecompositionGraphBuilder::DecompositionGraphBuilder(Buffer& buffer, ProductNode* node) :m_buffer(buffer){ 
+DecompositionGraphBuilder::DecompositionGraphBuilder(ProductNode* node) { 
     m_root = node; 
     m_graph = new Graph(node) ;  
 }
@@ -76,12 +76,30 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
      * p1 = (t1+t2)(v0) 
      * p2 = t1 	(v0-v1)
      */
+    // T0 + t1 replaces t0 , t1 + t2 replaces t2 ,
     // toeplitz decomposition
     // t1+t0 used for P0,t1+t2 used for P1,t1 used for P2
     Toep2d* toep = static_cast<Toep2d*>(node->GetToepNode()->GetValue()) ;
-    Toep2d* t0 = toep->operator()(0,toep->Size()/2, toep->Size()/2) ; // error here
+    Toep2d* t0 = toep->operator()(0,toep->Size()/2, toep->Size()/2) ; // error here 
     Toep2d* t2 = toep->operator()(toep->Size()/2,0, toep->Size()/2) ;
     Toep2d* t1 = toep->operator()(0,0, toep->Size()/2) ;
+
+    std::cout << "t0 col addr: " << t0->GetColRef().GetAddr() ; 
+    std::cout << " t0 row addr: " << t0->GetRowRef().GetAddr() ; 
+    std::cout << " t0 col size: " << t0->GetColRef().GetSize() ; 
+    std::cout << " t0 row size: " << t0->GetRowRef().GetSize() << std::endl ; 
+
+    std::cout << "t1 col addr: " << t1->GetColRef().GetAddr() ; 
+    std::cout << " t1 row addr: " << t1->GetRowRef().GetAddr() ; 
+    std::cout << " t1 col size: " << t1->GetColRef().GetSize() ; 
+    std::cout << " t1 row size: " << t1->GetRowRef().GetSize() << std::endl ; 
+
+    std::cout << "t2 col addr: " << t2->GetColRef().GetAddr() ; 
+    std::cout << " t2 row addr: " << t2->GetRowRef().GetAddr() ; 
+    std::cout << " t2 col size: " << t2->GetColRef().GetSize() ; 
+    std::cout << " t2 row size: " << t2->GetRowRef().GetSize() << std::endl ; 
+
+
     // create data nodes for toeps 
     DataNode* dn_t0 = new DataNode(t0) ; 
     DataNode* dn_t2 = new DataNode(t2) ; 
@@ -96,16 +114,18 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     // create op nodes for t1+t0 and t1+t2 
     OpNode* p0_t = new OpNode(Opcode_t::ADD) ; 
     OpNode* p1_t = new OpNode(Opcode_t::ADD) ;  
-    p0_t->SetOperands(dn_t0, p2_t) ;
-    p1_t->SetOperands(p2_t, dn_t2) ;   
+    //BufferRef t2_ov_ref = t2 // + m_size-1; 
+    //BufferRef t0_ov_ref; 
+    p0_t->SetOperands(dn_t0 , p2_t  );//, t0->GetColRef()) ;  // memory allocation should change here ! change later
+    p1_t->SetOperands(p2_t  , dn_t2 );//, t2->GetColRef()) ;   
     // Vector decomposition
     // v0 used for P0,v1 used for P1,v0-v1 used for P2
     Vec1d* vec= static_cast<Vec1d*>(node->GetVecNode()->GetValue()) ;
     Vec1d* v0 = vec->operator()(0, vec->Size()/2) ;
     Vec1d* v1 = vec->operator()(vec->Size()/2, vec->Size()/2) ;
     // Create data nodes for vecs  
-    DataNode* p0_v = new DataNode(v0) ;
-    DataNode* p1_v = new DataNode(v1) ; 
+    DataNode* p0_v = new DataNode(v1) ;
+    DataNode* p1_v = new DataNode(v0) ; 
     // add inputs to vec
     p0_v->AddInput(node->GetVecNode()) ;
     p1_v->AddInput(node->GetVecNode()) ;
@@ -114,7 +134,7 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     node->GetVecNode()->AddUser(p1_v) ;
     // create op nodes for v0-v1
     OpNode* p2_v = new OpNode(Opcode_t::SUB) ;
-    p2_v->SetOperands(p0_v, p1_v) ;
+    p2_v->SetOperands(p1_v, p0_v) ;
     // Recomposition
     ProductNode* p0 = new ProductNode(p0_t ,p0_v,true)   ;
     ProductNode* p1 = new ProductNode(p1_t ,p1_v,true)   ;
@@ -124,8 +144,8 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     OpNode* reduce1 = new OpNode(Opcode_t::SUB) ;
     BufferRef ref_0 = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()/2) ;
     BufferRef ref_1 = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr()+vec->GetRef().GetSize()/2, vec->GetRef().GetSize()/2) ;
-    reduce0->SetOperands(p0, p2, ref_0) ;
-    reduce1->SetOperands(p1, p2, ref_1) ;
+    reduce0->SetOperands(p0, p2, ref_1) ;
+    reduce1->SetOperands(p1, p2, ref_0) ;
     node->AddInput(reduce0) ;
     node->AddInput(reduce1) ;
     reduce0->AddUser(node) ;
