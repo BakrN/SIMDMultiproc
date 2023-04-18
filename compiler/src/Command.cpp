@@ -74,7 +74,13 @@ DecomposerCommandGenerator::~DecomposerCommandGenerator() {
 void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int>& enqueued, int dep_id, GEN_MODE mode){ 
 
     Command cmd = CreateCommand(static_cast<OpNode*>(node) , CMD_ID, dep_id) ; 
-    m_commands.push_back(cmd) ; 
+    if (mode == GEN_MODE::TOEP) { 
+        m_toep_commands.push_back(cmd) ;
+    } else if (mode == GEN_MODE::VEC) { 
+        m_vec_commands.push_back(cmd) ;
+    }  else{
+        m_recomp_commands.push_back(cmd) ;
+    }
     enqueued[node] = CMD_ID; 
     int ID = CMD_ID ;  
     CMD_ID++ ;  
@@ -114,14 +120,14 @@ void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered
 
 
 // assumes 1 to 1 dependency relationships   (work on dep later
-void DecomposerCommandGenerator::Generate() { 
+void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) { 
     // last 2x2/3x3 mult depends on last vec decomposition depends on toeplitz decomposition
     Graph* recomp_graph = new Graph(m_root); 
     Graph* toep_graph   = new Graph(static_cast<ProductNode*>(m_root)->GetToepNode()); 
     Graph* vec_graph    = new Graph(static_cast<ProductNode*>(m_root)->GetVecNode());
     std::unordered_map<Node* , int > enqueued;  // node to command id (very inefficient but whatever fix later ) 
                                                 // decomposition 
-
+    if (toep){ 
     for ( auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
 
         if ( (*it).GetAttribute("node_type") == "op" && (*it).GetAttribute("value_type") == "toep" ) {
@@ -134,7 +140,9 @@ void DecomposerCommandGenerator::Generate() {
 
         }
     }
+    } 
     //// vec command generation 
+    if (vec){ 
     enqueued.clear(); 
     for ( auto it = vec_graph->begin() ; it != vec_graph->end() ; ++it) { 
 
@@ -148,7 +156,9 @@ void DecomposerCommandGenerator::Generate() {
 
         }
     }
+    }
     //////// recomposition  
+    if (recomp) {
    enqueued.clear(); 
    for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
        // 
@@ -162,6 +172,7 @@ void DecomposerCommandGenerator::Generate() {
 
        }
    } 
+    }
     //delete recomp_graph ; 
     //delete toep_graph  ; 
     //delete vec_graph; 
@@ -173,5 +184,14 @@ std::ostream& operator<<(std::ostream& os , const Command& cmd ) {
         return os;
 } ;
 std::vector<Command>& DecomposerCommandGenerator::GetCommands() {
-    return m_commands;
+    // return m_commands;
+}
+std::vector<Command>& DecomposerCommandGenerator::GetToepCommands() {
+    return m_toep_commands;
+}
+std::vector<Command>& DecomposerCommandGenerator::GetVecCommands() {
+    return m_vec_commands;
+}
+std::vector<Command>& DecomposerCommandGenerator::GetRecompCommands(){
+    return m_recomp_commands;
 }

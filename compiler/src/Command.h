@@ -28,13 +28,12 @@ class DecomposerCommandGenerator{
         DecomposerCommandGenerator() ; 
         DecomposerCommandGenerator(Node* node) ; 
         ~DecomposerCommandGenerator() ; 
-        void Generate() ;  
+        void Generate(bool toep=true, bool vec=true, bool recomp=true) ;  
         std::vector<Command>& GetCommands() ;
         std::vector<Command>& GetToepCommands() ; 
         std::vector<Command>& GetVecCommands() ; 
         std::vector<Command>& GetRecompCommands() ; 
     private: 
-        std::vector<Command> m_commands ;  
         std::vector<Command> m_toep_commands ;  
         std::vector<Command> m_vec_commands ;
         std::vector<Command> m_recomp_commands;  

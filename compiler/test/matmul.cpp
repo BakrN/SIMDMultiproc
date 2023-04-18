@@ -92,11 +92,22 @@ int main() {
 
     //print_toep(decomp_out , size) ; 
 
-    print_vec(decomp_out +7, size) ; 
-    for (auto& cmd : command_generator.GetCommands()) { 
+    print_vec(decomp_out +2*size-1, size) ; 
+    std::cout << "Printing toep commands" << std::endl;
+    for (auto& cmd : command_generator.GetToepCommands()) { 
         std::cout << cmd << std::endl ; 
     }
-    Solver::ExecuteCmds(decomp_out , command_generator.GetCommands()) ;
+    std::cout << "Printing vec commands" << std::endl;
+    for (auto& cmd : command_generator.GetVecCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
+    std::cout << "Printing recomp commands" << std::endl;
+    for (auto& cmd : command_generator.GetRecompCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
+    Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()) ;
+    Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()) ;
+    Solver::ExecuteCmds(decomp_out , command_generator.GetRecompCommands()) ;
     //std::cout << "t1: " << std::endl ;
     //print_toep(decomp_out+2, 2);   // t0 
     //std::cout << "t0+t1: " << std::endl ;
