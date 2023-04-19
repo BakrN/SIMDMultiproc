@@ -16,9 +16,8 @@ struct Command {
     int wrbackaddr; 
     int count  ;
     Opcode_t operation ;  
-    // Following two member are only used for testing matmul2x2 and matmul3x3
-    Toep2d* toep ; 
-    Vec1d* vec ;
+    // test bit 
+    bool rtol; // right ot left
 } ; 
 std::ostream& operator<<(std::ostream& os , const Command& cmd ); 
 

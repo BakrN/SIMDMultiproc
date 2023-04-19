@@ -80,9 +80,9 @@ end
     inp1= {32'hFFFFFFFE , 32'h00000001, 32'hFFFFFFFF , 64'd0}; // input vector -2 1 -1
     inp0= {32'hFFFFFFFF , 32'd0 , 32'h00000001, 32'h00000002, 32'h00000003}; // input toep matrix. (-1 0 1 2 3 ) // 3x3
     // set o_res to output of matrix multiplication between (1,2,3; 0,1,2; -1,0,1) and (-2,1,-1)
-    res[0] = 32'hFFFFFFFD; // -2*1 + 2*1 + -1*3 = -3
-    res[1] = 32'hFFFFFFFF; // -2 * 0 + 1 * 1 + -1 *2 = -1
-    res[2] = 32'd1; // -2 * -1 + 1 * 0 + -1 = 1
+    res[0] = 32'hFFFFFFFD; // -2*1 + 2*1 + -1*3 = -3 {y0} 
+    res[1] = 32'hFFFFFFFF; // -2 * 0 + 1 * 1 + -1 *2 = -1 {y1} 
+    res[2] = 32'd1; // -2 * -1 + 1 * 0 + -1 = 1 {y2} 
 
     #10;
     if (o_res[5*UNIT_SIZE-1-:3*UNIT_SIZE] !== {res[0], res[1], res[2]}) begin

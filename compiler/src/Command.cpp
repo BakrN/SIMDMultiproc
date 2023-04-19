@@ -4,19 +4,21 @@
 #include <unordered_map>
 static int s_max_cmd_elements = 100 ; 
 static int CMD_ID = 1 ; 
+static int toep_offset = 0 ; 
+static int vec_offset = 0  ; 
 Command CreateCommand(OpNode* node , int cmd_id , int dep_id ) {
     int addr0 , addr1 , wrbackaddr , count; 
-    Toep2d* MAT = nullptr ;
-    Vec1d*  VEC = nullptr ; 
+    bool rtol = false ;
     if (node->GetAttribute("value_type") == "toep") {  
         // both are toep 
         Toep2d* toep0 = static_cast<Toep2d*>(node->Inputs()[0]->GetValue()) ;
         Toep2d* toep1 = static_cast<Toep2d*>(node->Inputs()[1]->GetValue()) ; 
         Toep2d* result = static_cast<Toep2d*>(node->GetValue()) ;
-        addr0 = toep0->GetColRef().GetAddr(); 
-        addr1 = toep1->GetColRef().GetAddr(); 
-        wrbackaddr = result->GetColRef().GetAddr(); 
-        count = 2*toep0->Size()-1; 
+        addr0 = toep0->GetColRef().GetAddr() + toep_offset; 
+        addr1 = toep1->GetColRef().GetAddr() + toep_offset; 
+        wrbackaddr = result->GetColRef().GetAddr() +toep_offset; 
+        count = 2*toep0->Size()-1;  
+        rtol = node->HasAttribute("rtol");
     }  else if (node->GetAttribute("value_type") == "vec") {  
         if (node->GetOpcode() == Opcode_t::MMUL_2x || node->GetOpcode() == Opcode_t::MMUL_3x) { 
             // one is toep, one is vec  
@@ -30,20 +32,18 @@ Command CreateCommand(OpNode* node , int cmd_id , int dep_id ) {
                 toep = static_cast<Toep2d*>(node->Inputs()[1]->GetValue()) ;
                 vec = static_cast<Vec1d*>(node->Inputs()[0]->GetValue()) ; 
             } 
-            MAT = toep ; 
-            VEC = vec ;
             Vec1d* result = static_cast<Vec1d*>(node->GetValue()) ;
-            addr0 = toep->GetColRef().GetAddr(); 
-            addr1 = vec->GetRef().GetAddr(); 
-            wrbackaddr = result->GetRef().GetAddr(); 
+            addr0 = toep->GetColRef().GetAddr() + toep_offset; 
+            addr1 = vec->GetRef().GetAddr() +vec_offset; 
+            wrbackaddr = result->GetRef().GetAddr() +vec_offset; 
             count = toep->Size(); // doesn't really matter in this case  
         } else { // both vec
             Vec1d* vec0 = static_cast<Vec1d*>(node->Inputs()[0]->GetValue()) ;
             Vec1d* vec1 = static_cast<Vec1d*>(node->Inputs()[1]->GetValue()) ; 
             Vec1d* result = static_cast<Vec1d*>(node->GetValue()) ;
-            addr0 = vec0->GetRef().GetAddr(); 
-            addr1 = vec1->GetRef().GetAddr(); 
-            wrbackaddr = result->GetRef().GetAddr(); 
+            addr0 = vec0->GetRef().GetAddr()+vec_offset; 
+            addr1 = vec1->GetRef().GetAddr()+vec_offset; 
+            wrbackaddr = result->GetRef().GetAddr()+vec_offset; 
             count = vec0->Size();
         } 
     } 
@@ -55,8 +55,7 @@ Command CreateCommand(OpNode* node , int cmd_id , int dep_id ) {
             wrbackaddr ,
             count ,
             node->GetOpcode() ,
-            MAT,
-            VEC
+            rtol
             })  ; 
     return cmd;
 } 
@@ -127,7 +126,13 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
     Graph* vec_graph    = new Graph(static_cast<ProductNode*>(m_root)->GetVecNode());
     std::unordered_map<Node* , int > enqueued;  // node to command id (very inefficient but whatever fix later ) 
                                                 // decomposition 
+
     if (toep){ 
+        Toep2d* mat = static_cast<Toep2d*>(toep_graph->GetRoot()->GetValue()) ; 
+        toep_offset = -mat->GetColRef().GetBuffer()->GetStart(); 
+        vec_offset = mat->GetColRef().GetBuffer()->GetFree() + toep_offset;
+        std::cout << "free " << mat->GetColRef().GetBuffer()->GetFree()<< std::endl;
+        std::cout << "vec offset " << vec_offset << std::endl;
     for ( auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
 
         if ( (*it).GetAttribute("node_type") == "op" && (*it).GetAttribute("value_type") == "toep" ) {
@@ -171,7 +176,7 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
            FindAndEnqueueUsers(node , enqueued ,0 ,  GEN_MODE::RECOMPOSE) ;
 
        }
-   } 
+    } 
     }
     //delete recomp_graph ; 
     //delete toep_graph  ; 
@@ -180,7 +185,7 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
 
 std::ostream& operator<<(std::ostream& os , const Command& cmd ) { 
         std::string op = (cmd.operation == Opcode_t::ADD) ? "ADD" : (cmd.operation == Opcode_t::SUB) ? "SUB" : (cmd.operation == Opcode_t::MMUL_2x) ? "MMUL_2x" : "MMUL_3x" ;
-        os << "id: " << cmd.id << " dep: " << cmd.dep << " operand0: " << cmd.operand0 << " operand1: " << cmd.operand1 << " wrbackaddr: " << cmd.wrbackaddr << " count: " << cmd.count << " operation: " << op << std::endl;
+        os << "id: " << cmd.id << " dep: " << cmd.dep << " operand0: " << cmd.operand0 << " operand1: " << cmd.operand1 << " wrbackaddr: " << cmd.wrbackaddr << " count: " << cmd.count << " operation: " << op << " rtol: " << cmd.rtol << std::endl;
         return os;
 } ;
 std::vector<Command>& DecomposerCommandGenerator::GetCommands() {

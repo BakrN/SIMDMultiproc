@@ -50,6 +50,7 @@ void print_toep(unit_t* toep, int size) {
     std::cout << std::endl ; 
 }
 int main() {   
+    // works for 2x2 case 
     int size = 8; 
     unit_t* toep = create_toep(size) ;
     unit_t* vec = create_vec(size) ;
@@ -70,29 +71,28 @@ int main() {
     for (int i = 0 ; i < size ; i++) { 
         std::cout << result[i] << std::endl ;  
     } 
-    Buffer buf(1000);  
-    Toep2d* toep_struct = new Toep2d(&buf, size );
+    Buffer toep_buf(1000);  
+    Buffer vec_buf(1000);  
+    Toep2d* toep_struct = new Toep2d(&toep_buf, size );
     //std::cout << " Toep row addr: " << toep_struct->GetRowRef().GetAddr() << std::endl;
     //std::cout << " Toep col addr: " << toep_struct->GetColRef().GetAddr() << std::endl;
-    Vec1d*  vec_struct = new Vec1d(&buf,    size) ;  
+    Vec1d*  vec_struct = new Vec1d(&vec_buf,    size) ;  
     DataNode* toep_node = new DataNode(toep_struct);
     DataNode* vec_node = new DataNode(vec_struct);
-    ProductNode* node = new ProductNode(toep_node , vec_node ,  true);  
-    std::cout << "Starting decomposition graph builder" << std::endl;
+    ProductNode* node = new ProductNode(toep_node , vec_node );  
     DecompositionGraphBuilder builder( node);  
     Graph* graph = builder.BuildGraph() ;  
-    std::cout << "Finished decomposition graph builder" << std::endl; 
     DecomposerCommandGenerator command_generator(graph->GetRoot()); 
     //toep_graph->PrintGraph() ;
     command_generator.Generate() ; 
-    std::cout << "solving recomp commands" << std::endl;
-    unit_t* decomp_out = new unit_t[buf.GetFree()] ;   
-    memcpy(decomp_out, toep, ((2*size)-1)*sizeof(unit_t)) ; 
-    memcpy(decomp_out+2*size-1, vec, size*sizeof(unit_t)) ; 
+    unit_t* decomp_out = new unit_t[toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart()] ;    
+    memcpy(decomp_out-toep_buf.GetStart(), toep, ((2*size)-1)*sizeof(unit_t)) ; // memory calls to dma
+    std::cout << "Free addr of toeop_buf: " << toep_buf.GetFree() << std::endl;
+    memcpy(decomp_out+toep_buf.GetFree()-toep_buf.GetStart(), vec, size*sizeof(unit_t)) ; 
 
-    //print_toep(decomp_out , size) ; 
+    print_toep(decomp_out-toep_buf.GetStart() , size) ; 
+    print_vec(decomp_out +toep_buf.GetFree()-toep_buf.GetStart(), size) ;   
 
-    print_vec(decomp_out +2*size-1, size) ; 
     std::cout << "Printing toep commands" << std::endl;
     for (auto& cmd : command_generator.GetToepCommands()) { 
         std::cout << cmd << std::endl ; 
@@ -105,23 +105,24 @@ int main() {
     for (auto& cmd : command_generator.GetRecompCommands()) { 
         std::cout << cmd << std::endl ; 
     }
-    Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()) ;
-    Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()) ;
+    Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()  ) ;
+    Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()   ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetRecompCommands()) ;
     //std::cout << "t1: " << std::endl ;
-    //print_toep(decomp_out+2, 2);   // t0 
+    //print_toep(decomp_out+3, 2);   // t0 
     //std::cout << "t0+t1: " << std::endl ;
-    //print_toep(decomp_out+11, 2);   // t0 
+    //print_toep(decomp_out+6, 2);   // t0 
     //std::cout << "t2+1: " << std::endl ;
-    //print_toep(decomp_out+14, 2 ) ;   // t2    
+    //print_toep(decomp_out, 2 ) ;   // t2    
     //std::cout << "p0: " << std::endl ;
-    //print_vec(decomp_out+9, 2);   
+    //print_vec(decomp_out+10, 2);   
     //std::cout << "p1: " << std::endl ;
-    //print_vec(decomp_out+7, 2);   
+    //print_vec(decomp_out+8, 2);   
     //std::cout << "p2: " << std::endl ;
-    //print_vec(decomp_out+17, 2);   
+    //print_vec(decomp_out+12, 2);   
     std::cout << "result: " << std::endl ;
-    print_vec(decomp_out+size*2-1, size);
+    int index = static_cast<Vec1d*>(node->GetValue())->GetRef().GetAddr() + toep_buf.GetFree() - toep_buf.GetStart() ; 
+    print_vec(decomp_out+index, 2*size);
 
     
     return 0 ; 

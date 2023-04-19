@@ -6,7 +6,7 @@
 #include "Graph.h" 
 #include <type_traits>
 #include <assert.h>
-
+#include <functional> 
 // Will need to add a new node for double dependency 
 class ProductNode : public Node { 
     public: 
@@ -18,8 +18,9 @@ class ProductNode : public Node {
     private: 
         Node* m_toep ; 
         Node* m_vec ;
-        Vec1d* m_result ;
-} ; 
+        std::function<void*()> m_get_val ;
+        bool m_bound_to_input; 
+} ;     
 enum class Opcode_t {
     ADD, 
     SUB, 

@@ -6,20 +6,35 @@ ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), 
     this->AddAttribute("value_type", "vec") ;  
     toep->SetParent(this); 
     vec->SetParent(this); 
-    if(overwrite) { 
-        //std::cout << "Address of ptr: " << static_cast<Vec1d*>(vec->GetValue()) << std::endl ;
-        m_result = new Vec1d(*(static_cast<Vec1d*>(vec->GetValue())));  
+    if (vec->GetAttribute("node_type") == "data") { 
+       m_get_val = std::bind(&DataNode::GetValue, static_cast<DataNode*>(vec) ) ; 
+    } else{ 
+       m_get_val = std::bind(&OpNode::GetValue, static_cast<OpNode*>(vec) ) ; 
+    } 
+    m_bound_to_input = false ;
+    //if(overwrite) { 
+    //    //std::cout << "Address of ptr: " << static_cast<Vec1d*>(vec->GetValue()) << std::endl ;
+    //    m_result = new Vec1d(*(static_cast<Vec1d*>(vec->GetValue())));  
 
-    } else { 
-        m_result = new Vec1d(static_cast<Vec1d*>(vec->GetValue())->GetRef().GetBuffer(), static_cast<Vec1d*>(vec->GetValue())->Size()) ;
-    }
-} 
+    //} else { 
+    //    m_result = new Vec1d(static_cast<Vec1d*>(vec->GetValue())->GetRef().GetBuffer(), static_cast<Vec1d*>(vec->GetValue())->Size()) ;
+    //}
+}  
+    
 ProductNode::~ProductNode() { 
-    delete m_result ; 
 };  
 void* ProductNode::GetValue() { 
-    return m_result; 
+    if (!m_bound_to_input) { 
+        if (this->Inputs().size()>0) { 
+            // create new 
+            m_get_val = std::bind(&OpNode::GetValue, static_cast<OpNode*>(this->Inputs()[0])) ; 
+
+            m_bound_to_input = true ;
+        } 
+    } 
+    return m_get_val(); 
 }
+
 Node* ProductNode::GetToepNode() { 
     return m_toep ; 
 }

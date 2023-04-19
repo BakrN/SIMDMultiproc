@@ -5,8 +5,8 @@
 `define PROC_COUNT  4
 `define UNIT_SIZE   4          // int32 
 `define MAX_CMDS `PROC_COUNT*2 // Maximum amount of commands that could be stored in CAM 
-
-
+`define USIZE 32 
+`define BUS_W 160
 `define MEM_SIZE 4096 
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
@@ -25,7 +25,7 @@ typedef enum logic [1:0] {INSTR_LD, INSTR_INFO, INSTR_STORE} opcode_t;
 // set info:  set size 
 typedef struct packed { 
         logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;  // How many elements 
-        logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul 
+        logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul2x , 3 for mul3x
 } instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
 

@@ -60,8 +60,8 @@ module proc(
     output logic o_ack ; 
     output addr_t o_addr ; // for accessing shared mem  
     output logic[2:0] o_wr_size;  
-    input logic [127:0] i_data  ; // data read from shared mem
-    output logic [127:0]  o_data; 
+    input logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
+    output logic [`BUS_W-1:0]  o_data; 
 
 
 /* ---------------------------- Logic Definition ---------------------------- */
@@ -71,12 +71,12 @@ addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1  , wr_addr ;
 cmd_id_t r_id ;  
 logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
-logic [127:0] reg0 , reg1 ; 
+logic [`BUS_W-1:0] reg0 , reg1 ; 
 // INFO storage   
 instr_info_t instr_info ; 
 
 /* -------------------------- Modules Instantiation ------------------------- */ 
-simd_arr u_simd_arr (
+array u_simd_arr (
     .i_in1                   ( reg0    ),
     .i_in2                   ( reg1 ),
     .opcode                  ( instr_info.op  ),
@@ -85,8 +85,8 @@ simd_arr u_simd_arr (
 
 // Next address 
 always_comb begin 
-    next_addr_0 = addr_0 + 128 ;  
-    next_addr_1 = addr_1 + 128 ;  
+    next_addr_0 = addr_0 + `BUS_W ; // bus size 
+    next_addr_1 = addr_1 + `BUS_W ; // bus size 
 end
 /* ---------------------------- FSM Definition ------------------------------- */
 
@@ -106,7 +106,7 @@ end
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= LD2 ;   
                     addr_0 <= i_instr.payload ;  
-                    o_ack <= 1; 
+                    o_ack <= 1;  
                 end
                 else  begin 
                     state <= LD1;
@@ -148,7 +148,10 @@ end
             FETCH1: begin 
                 if(i_grant_rd) begin 
                     //if (1) begin  // if done read 
-                        reg0 <= i_data ; 
+                        if (intr_info.opcode == 2) begin  // if matmul2x2 pad with zeros
+                            reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE] i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}}   , 
+                        end else 
+                            reg0 <= i_data ;  
                         state <= FETCH2 ;  
                     //end
                 end 
