@@ -131,8 +131,6 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
         Toep2d* mat = static_cast<Toep2d*>(toep_graph->GetRoot()->GetValue()) ; 
         toep_offset = -mat->GetColRef().GetBuffer()->GetStart(); 
         vec_offset = mat->GetColRef().GetBuffer()->GetFree() + toep_offset;
-        std::cout << "free " << mat->GetColRef().GetBuffer()->GetFree()<< std::endl;
-        std::cout << "vec offset " << vec_offset << std::endl;
     for ( auto it = toep_graph->begin() ; it != toep_graph->end() ; ++it) { 
 
         if ( (*it).GetAttribute("node_type") == "op" && (*it).GetAttribute("value_type") == "toep" ) {
@@ -173,7 +171,8 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
            if (enqueued.find(node) != enqueued.end()) { 
                continue ; 
            }
-           FindAndEnqueueUsers(node , enqueued ,0 ,  GEN_MODE::RECOMPOSE) ;
+           //FindAndEnqueueUsers(node , enqueued ,0 ,  GEN_MODE::RECOMPOSE) ;
+            m_recomp_commands.emplace_back(CreateCommand(static_cast<OpNode*>(node) , CMD_ID, 0)); 
 
        }
     } 

@@ -26,7 +26,7 @@ class Vec1d {
         } 
         uint32_t Size() { 
             return m_size ; 
-        }
+        } 
     private: 
         uint32_t m_size;  
         BufferRef m_ref ;

@@ -15,11 +15,11 @@ class ProductNode : public Node {
         void* GetValue() override ; 
         Node* GetToepNode() ; 
         Node* GetVecNode()  ;  
+        void GetResultFromInputs() ; // set vec's value
     private: 
         Node* m_toep ; 
         Node* m_vec ;
-        std::function<void*()> m_get_val ;
-        bool m_bound_to_input; 
+        Vec1d* m_result ;
 } ;     
 enum class Opcode_t {
     ADD, 

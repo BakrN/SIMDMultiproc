@@ -1,17 +1,13 @@
 #include "Operator.h" 
 #include <type_traits>
 #include <iostream> 
+#include <limits.h>
 ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), m_vec(vec) {
     this->AddAttribute("node_type", "product") ; 
     this->AddAttribute("value_type", "vec") ;  
     toep->SetParent(this); 
     vec->SetParent(this); 
-    if (vec->GetAttribute("node_type") == "data") { 
-       m_get_val = std::bind(&DataNode::GetValue, static_cast<DataNode*>(vec) ) ; 
-    } else{ 
-       m_get_val = std::bind(&OpNode::GetValue, static_cast<OpNode*>(vec) ) ; 
-    } 
-    m_bound_to_input = false ;
+    m_result = new Vec1d(*static_cast<Vec1d*>(vec->GetValue())); 
     //if(overwrite) { 
     //    //std::cout << "Address of ptr: " << static_cast<Vec1d*>(vec->GetValue()) << std::endl ;
     //    m_result = new Vec1d(*(static_cast<Vec1d*>(vec->GetValue())));  
@@ -23,16 +19,31 @@ ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), 
     
 ProductNode::~ProductNode() { 
 };  
-void* ProductNode::GetValue() { 
-    if (!m_bound_to_input) { 
-        if (this->Inputs().size()>0) { 
-            // create new 
-            m_get_val = std::bind(&OpNode::GetValue, static_cast<OpNode*>(this->Inputs()[0])) ; 
+void ProductNode::GetResultFromInputs() { 
+    // IMPORTANT 
+    // ASSUMES contiguous inputs on the same BufferRef (no checks for now
+    if (m_result) { 
 
-            m_bound_to_input = true ;
-        } 
+        delete m_result ; 
+    }
+    // get min index  , get max size
+    int min_index  = INT_MAX; 
+    int total_size = 0 ; 
+    Buffer* buf = nullptr; 
+    for (auto& node : this->Inputs()){ 
+        Vec1d* vec = static_cast<Vec1d*>(node->GetValue()) ;
+        min_index = std::min(vec->GetRef().GetAddr(), min_index) ;
+        total_size += vec->Size() ; 
+        buf = vec->GetRef().GetBuffer() ;
     } 
-    return m_get_val(); 
+    m_result = new Vec1d(BufferRef(buf, min_index, total_size)) ;
+
+
+} 
+
+
+void* ProductNode::GetValue() { 
+    return m_result ;
 }
 
 Node* ProductNode::GetToepNode() { 

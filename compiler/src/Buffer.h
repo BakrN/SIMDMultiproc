@@ -32,6 +32,7 @@ class BufferRef {
         int GetAddr() const ;
         uint32_t GetSize() const  ; 
         Buffer* GetBuffer() ; 
+
     private: 
         Buffer* m_buf ;
         int m_addr ; 

@@ -36,6 +36,7 @@ void Solver::ExecuteCmd( unit_t * mem ,const Command& cmd )  {
     } 
 } 
 void Solver::ExecuteCmds( unit_t * mem ,const std::vector<Command>& cmds ) { 
+    
     for (auto& cmd : cmds) { 
         ExecuteCmd(mem, cmd);  
     }

@@ -84,20 +84,20 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     Toep2d* t2 = toep->operator()(toep->Size()/2,0, toep->Size()/2) ;
     Toep2d* t1 = toep->operator()(0,0, toep->Size()/2) ;
 
-    std::cout << "t0 col addr: " << t0->GetColRef().GetAddr() ; 
-    std::cout << " t0 row addr: " << t0->GetRowRef().GetAddr() ; 
-    std::cout << " t0 col size: " << t0->GetColRef().GetSize() ; 
-    std::cout << " t0 row size: " << t0->GetRowRef().GetSize() << std::endl ; 
+    //std::cout << "t0 col addr: " << t0->GetColRef().GetAddr() ; 
+    //std::cout << " t0 row addr: " << t0->GetRowRef().GetAddr() ; 
+    //std::cout << " t0 col size: " << t0->GetColRef().GetSize() ; 
+    //std::cout << " t0 row size: " << t0->GetRowRef().GetSize() << std::endl ; 
 
-    std::cout << "t1 col addr: " << t1->GetColRef().GetAddr() ; 
-    std::cout << " t1 row addr: " << t1->GetRowRef().GetAddr() ; 
-    std::cout << " t1 col size: " << t1->GetColRef().GetSize() ; 
-    std::cout << " t1 row size: " << t1->GetRowRef().GetSize() << std::endl ; 
+    //std::cout << "t1 col addr: " << t1->GetColRef().GetAddr() ; 
+    //std::cout << " t1 row addr: " << t1->GetRowRef().GetAddr() ; 
+    //std::cout << " t1 col size: " << t1->GetColRef().GetSize() ; 
+    //std::cout << " t1 row size: " << t1->GetRowRef().GetSize() << std::endl ; 
 
-    std::cout << "t2 col addr: " << t2->GetColRef().GetAddr() ; 
-    std::cout << " t2 row addr: " << t2->GetRowRef().GetAddr() ; 
-    std::cout << " t2 col size: " << t2->GetColRef().GetSize() ; 
-    std::cout << " t2 row size: " << t2->GetRowRef().GetSize() << std::endl ; 
+    //std::cout << "t2 col addr: " << t2->GetColRef().GetAddr() ; 
+    //std::cout << " t2 row addr: " << t2->GetRowRef().GetAddr() ; 
+    //std::cout << " t2 col size: " << t2->GetColRef().GetSize() ; 
+    //std::cout << " t2 row size: " << t2->GetRowRef().GetSize() << std::endl ; 
 
 
     // create data nodes for toeps 
@@ -116,12 +116,12 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     OpNode* p1_t = new OpNode(Opcode_t::ADD) ;  
     //BufferRef t2_ov_ref = t2 // + m_size-1; 
     //BufferRef t0_ov_ref; 
-    BufferRef p0_t_ov_ref = BufferRef(t0->GetColRef().GetBuffer(), t0->GetColRef().GetAddr()+t0->GetColRef().GetSize(), t0->GetColRef().GetSize()*2+1 ) ;// size doesn't matter only start index 
-    BufferRef p1_t_ov_ref = BufferRef(t2->GetColRef().GetBuffer(), (int)t2->GetColRef().GetAddr()-(int)t2->GetColRef().GetSize(), t2->GetColRef().GetSize()*2+1 ) ;// size doesn't matter only start index
+    //BufferRef p0_t_ov_ref = BufferRef(t0->GetColRef().GetBuffer(), t0->GetColRef().GetAddr()+t0->GetColRef().GetSize(), t0->GetColRef().GetSize()*2+1 ) ;// size doesn't matter only start index 
+    //BufferRef p1_t_ov_ref = BufferRef(t2->GetColRef().GetBuffer(), (int)t2->GetColRef().GetAddr()-(int)t2->GetColRef().GetSize(), t2->GetColRef().GetSize()*2+1 ) ;// size doesn't matter only start index
 
-    p0_t->SetOperands(dn_t0 , p2_t  , p0_t_ov_ref ) ; 
-    p0_t->AddAttribute("rtol", ""); // right to left exec
-    p1_t->SetOperands(p2_t  , dn_t2 , p1_t_ov_ref ) ;
+    p0_t->SetOperands(dn_t0 , p2_t );// , p0_t_ov_ref ) ; 
+    //p0_t->AddAttribute("rtol", ""); // right to left exec
+    p1_t->SetOperands(p2_t  , dn_t2 );//, p1_t_ov_ref ) ;
 
     // Vector decomposition
     // v0 used for P0,v1 used for P1,v0-v1 used for P2
@@ -154,7 +154,8 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     node->AddInput(reduce0) ;
     node->AddInput(reduce1) ;
     reduce0->AddUser(node) ;
-    reduce1->AddUser(node) ; 
+    reduce1->AddUser(node) ;  
+    node->GetResultFromInputs(); 
 }
 void DecompositionGraphBuilder::SplitThreeWay(ProductNode* node) { 
     // three way split  
