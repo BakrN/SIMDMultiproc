@@ -41,13 +41,7 @@ always_comb begin
     end else begin // mat mul
     // matrix mul result will be stored in adder_out [0] , [1] , [2]
     //                                               Y0    Y1     Y2
-    // display mat 
-    for (int row = 0 ; row < 3 ; row++) begin
-        $display("mat[%0d] = %0h %0h %0h",row,mat[row][0],mat[row][1],mat[row][2]);
-    end
-    for (int row = 0 ; row < 3 ; row++) begin
-        $display("vec[%0d] = %0h",row,vec[row]);
-    end
+    // display mat
         adder[3] = mul_int[0][0] + mul_int[0][1];
         adder[0] = adder[3] + mul_int[0][2]; // Y0
         adder[4] = mul_int[1][0] + mul_int[1][1] ;
@@ -59,7 +53,7 @@ end
 
 
 
-// multiply unit (element-wise) 
+// multiply unit (element-wise)
 logic signed [2:0][UNIT_SIZE-1:0] mul_int [3];
 always_comb begin
     mul_int[0][0] = vec[0] * mat[0][0];

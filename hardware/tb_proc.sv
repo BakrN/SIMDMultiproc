@@ -9,7 +9,6 @@
     $display("signal1: %d and signal2: %d were equal", signal1, signal2); \
   end
 
-  
 
 module proc_tb; 
     parameter T = 10 ; 
@@ -21,7 +20,7 @@ module proc_tb;
     logic i_grant_rd;
     logic i_grant_wr;
     logic i_valid;
-    logic [3:0][31:0] i_data;
+    logic [4:0][31:0] i_data;
 
     // proc Outputs
     logic o_finish;
@@ -31,7 +30,7 @@ module proc_tb;
     logic o_ack;
     addr_t o_addr;
     logic[2:0] o_wr_size;
-    logic [3:0][31:0] o_data;
+    logic [4:0][31:0] o_data;
     proc  u_proc (
         .i_instr                 (       i_instr        ),
         .i_clk                   (       i_clk          ),

@@ -1,11 +1,13 @@
 
+from re import A
 from typing import Dict, Union
 from model.mem import Mem
 from enum import Enum
 from dataclasses import dataclass
 import random 
 import bisect
-
+MAX_ID = 15 
+MAX_COUNT = 63
 class Status(Enum): 
     WAITING = 0
     RUNNING = 1 
@@ -13,10 +15,11 @@ class Status(Enum):
 class Opcode(Enum): 
     ADD = 0
     SUB = 1
-    MUL = 2
+    MUL_2x = 2
+    MUL_3x = 3
 class Command: 
     id : int = 0     # Command ID 
-    dep_id :int = -1 # Dependency ID
+    dep_id :int = 0 # Dependency ID
     opcode : Opcode= Opcode.ADD # Operation code (e.g. ADD, SUB, MUL)
     addr0  : int = 0 # address of the first operand
     addr1  : int = 0 # address of the second operand
@@ -26,8 +29,37 @@ class Command:
     def __str__(self) -> str:
         """Return a string representation of the command."""
         return str(self.id) + " " + str(self.opcode) + " " + str(self.addr0) + " " + str(self.addr1) + " " + str(self.count) + " " + str(self.writeback_addr) + " " + str(self.status) + " " + str(self.dep_id) 
-
-
+    def to_packed_hex(self):
+       id_hex = hex(self.id)[2:].zfill(2)   # Convert ID to hex and pad with leading zeros if necessary
+       dep_id_hex = hex(self.dep_id)[2:].zfill(2)   # Convert Dependency ID to hex and pad with leading zeros if necessary
+       opcode_hex = hex(self.opcode.value)[2:].zfill(2)  # Convert Opcode value to hex and pad with leading zeros if necessary
+       addr0_hex = hex(self.addr0)[2:].zfill(6)  # Convert address of the first operand to hex and pad with leading zeros if necessary
+       addr1_hex = hex(self.addr1)[2:].zfill(6)  # Convert address of the second operand to hex and pad with leading zeros if necessary
+       count_hex = hex(self.count)[2:].zfill(2)  # Convert Number of elements to hex and pad with leading zeros if necessary
+       writeback_addr_hex = hex(self.writeback_addr)[2:].zfill(6)  # Convert Address for writeback data to hex and pad with leading zeros if necessary
+       packed_hex = f"{id_hex}{dep_id_hex}{opcode_hex}{addr0_hex}{addr1_hex}{count_hex}{writeback_addr_hex}"
+       
+       return packed_hex
+    def to_packed_bin(self):
+        id_bin =   bin(self.id)[2:].zfill(4)   # 4 bits
+        dep_id_bin = bin(self.dep_id)[2:].zfill(4)   # 4 bits
+        opcode_bin = bin(self.opcode.value)[2:].zfill(2) # 2bits
+        addr0_bin = bin(self.addr0)[2:].zfill(24)  # 24 bits
+        addr1_bin = bin(self.addr1)[2:].zfill(24)  # 24 bits 
+        count_bin = bin(self.count)[2:].zfill(6)  # 6 bits
+        writeback_addr_bin = bin(self.writeback_addr)[2:].zfill(24)  # 24 bits  
+        packed_bin = f"{id_bin}{dep_id_bin}{opcode_bin}{addr0_bin}{addr1_bin}{count_bin}{writeback_addr_bin}" 
+        return packed_bin
+def cmd_from_bin(bin_str):
+    cmd = Command()
+    cmd.id = int(bin_str[0:4], 2)
+    cmd.dep_id = int(bin_str[4:8], 2)
+    cmd.opcode = Opcode(int(bin_str[8:10], 2))
+    cmd.addr0 = int(bin_str[10:34], 2)
+    cmd.addr1 = int(bin_str[34:58], 2)
+    cmd.count = int(bin_str[58:64], 2)
+    cmd.writeback_addr = int(bin_str[64:88], 2)
+    return cmd
 class Node: 
     def __init__(self, data, parent = None , children: list = None) -> None:
         self.data = data 
@@ -169,6 +201,16 @@ class CmdQueueSerializer: # serialize command queue
         self.queue = queue
         pass 
     def serialize(self, filename):
+        # Write queue to file 
+        with open(filename, 'w') as f:
+            queue = self.queue.top_cmd           
+            while len(queue) > 0: 
+                next_queue = []
+                for node in queue: 
+                    f.write(node.data.to_packed_bin() + "\n")
+
+                    next_queue += node.children
+                queue = next_queue
         # Serialize the command queue to a file
 
         pass
@@ -206,36 +248,36 @@ class CmdFetcher:
         
 
 #generate add cmd with a dependency parameter that is set to -1 by default 
-def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=-1):
+def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
-    cmd.id = id
+    cmd.id = id % (MAX_ID + 1)
     cmd.dep_id = dep_id
     cmd.opcode = Opcode.ADD
     cmd.addr0 = addr0
     cmd.addr1 = addr1
-    cmd.count = count
+    cmd.count = count % (MAX_COUNT + 1)
     cmd.writeback_addr = writeback_addr
     return cmd
 # generate a mul cmd 
-def gen_mul_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=-1):
-    cmd = Command()
-    cmd.id = id
-    cmd.dep_id = dep_id
-    cmd.opcode = Opcode.MUL
-    cmd.addr0 = addr0
-    cmd.addr1 = addr1
-    cmd.count = count
-    cmd.writeback_addr = writeback_addr
-    return cmd
+
+
+
+
+
+
+
+
+
+
 #generate a sub cmd
-def gen_sub_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=-1):
+def gen_sub_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
-    cmd.id = id
+    cmd.id = id  % (MAX_ID + 1)
     cmd.dep_id = dep_id
     cmd.opcode = Opcode.SUB
     cmd.addr0 = addr0
     cmd.addr1 = addr1
-    cmd.count = count
+    cmd.count = count % (MAX_COUNT + 1)
     cmd.writeback_addr = writeback_addr
     return cmd
 
@@ -249,11 +291,9 @@ def gen_cmd_queue(count,mem : Mem , max_op_size = 100):
         addr1 = random.randint(addr0+1,mem.count - op_size)   
         writeback_addr = random.randint(0,mem.count - op_size)
         if cmd_type == 0 :
-            cmd = gen_add_cmd(i , addr0, addr1, op_size, writeback_addr)
-        elif cmd_type == 1 : 
-            cmd = gen_sub_cmd(i , addr0, addr1, op_size, writeback_addr)
-        else :
-            cmd = gen_mul_cmd(i , addr0, addr1, op_size, writeback_addr)
+            cmd = gen_add_cmd(i+1 , addr0, addr1, op_size, writeback_addr)
+        else : 
+            cmd = gen_sub_cmd(i+1 , addr0, addr1, op_size, writeback_addr)
         queue.add_cmd(cmd)
     return queue
 
@@ -264,8 +304,5 @@ def execute_cmd (cmd : Command , mem : Mem):
     elif cmd.opcode == Opcode.SUB :
         for i in range(cmd.count):
             mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] - mem.data[cmd.addr1 + i]
-    elif cmd.opcode == Opcode.MUL :
-        for i in range(cmd.count):
-            mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] * mem.data[cmd.addr1 + i]
     cmd.status = Status.DONE
     return mem

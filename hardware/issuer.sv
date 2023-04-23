@@ -11,17 +11,18 @@
 module issuer ( 
     i_clk, 
     i_rstn, 
-    i_ack_proc , 
     // fifo ports
     i_cmd ,
     i_empty_queue, 
     o_rd_queue ,  
     // Proc ports
+    i_ack_proc , 
     i_finish_proc, 
     i_busy_proc  , 
     o_en_proc, // enable or validate instr to proc
     o_ack_proc , 
-    o_instr     
+    o_instr   , 
+    o_finished_task
 ) ;  
 input i_clk ;
 input i_rstn ;
@@ -35,6 +36,7 @@ output instr_t o_instr;
 // fifo ports 
 input cmd_t i_cmd ; 
 output logic o_rd_queue ;
+output o_finished_task; 
 // State machine 
 // cam Parameters
 localparam DATA_WIDTH   = $bits(cmd_id_t) + $clog2(`PROC_COUNT)  ;
@@ -409,6 +411,6 @@ end
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET)? 1 :0; 
 assign o_ack_proc = (state==SEND_ACK || (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO)) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
 assign o_en_proc = (state==SIMD_SELECT && i_busy_proc[selected_proc]==0) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
-
+assign o_finished_task = (state == IDLE && |i_busy_proc==0) ? 1 : 0;
 
 endmodule   

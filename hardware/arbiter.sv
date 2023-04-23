@@ -1,7 +1,7 @@
 `include "./arbitration_algorithm.sv"
 
 module arbiter #(
-    N_REQ = 8  // number of requesters
+   parameter N_REQ = 8  // number of requesters
 ) (
     input  logic             i_clk             , // clock
     input  logic             i_rst_n           , // synchronous reset active low

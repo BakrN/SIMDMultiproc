@@ -1,6 +1,6 @@
 // https://github.com/diadatp/rrarbiter/blob/master/src/arbitration_algorithm.sv
 module arbitration_algorithm #(
-    N_REQ = 8 // number of requesters
+   parameter N_REQ = 8 // number of requesters
 ) (
     output [N_REQ-1:0] next_ready ,
     input  [N_REQ-1:0] input_valid, last_ready, current_ready

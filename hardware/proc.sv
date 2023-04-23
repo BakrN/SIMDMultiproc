@@ -15,7 +15,7 @@
         Writeback -> IDLE if size or count of ops is 0 else go back to reg1 
 
 */ 
-module proc(
+module proc( 
     i_clk    , 
     i_rstn   , 
     i_en     ,
@@ -47,21 +47,21 @@ module proc(
     localparam FINISHED  = 4'd8;  
 /* -------------------------------- IO Ports -------------------------------- */
     input  instr_t i_instr; 
-    input i_clk  ; 
-    input i_rstn ; 
-    input i_en   ; 
-    input i_grant_rd ; 
-    input i_grant_wr ; 
+    input i_clk  ;
+    input i_rstn ;
+    input i_en   ;
+    input i_grant_rd ;
+    input i_grant_wr ;
     input i_valid ; // also used for ack in finished stage 
-    output o_finish; 
-    output logic o_req_rd; 
-    output logic o_req_wr; 
-    output o_busy; 
-    output logic o_ack ; 
+    output o_finish;
+    output logic o_req_rd;
+    output logic o_req_wr;
+    output o_busy;
+    output logic o_ack ;
     output addr_t o_addr ; // for accessing shared mem  
-    output logic[2:0] o_wr_size;  
+    output logic[2:0] o_wr_size;
     input logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
-    output logic [`BUS_W-1:0]  o_data; 
+    output logic [`BUS_W-1:0]  o_data;
 
 
 /* ---------------------------- Logic Definition ---------------------------- */
@@ -148,8 +148,8 @@ end
             FETCH1: begin 
                 if(i_grant_rd) begin 
                     //if (1) begin  // if done read 
-                        if (intr_info.opcode == 2) begin  // if matmul2x2 pad with zeros
-                            reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE] i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}}   , 
+                        if (instr_info.op == 2) begin  // if matmul2x2 pad with zeros
+                            reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE], i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}};
                         end else 
                             reg0 <= i_data ;  
                         state <= FETCH2 ;  
@@ -167,11 +167,11 @@ end
                     //if (1)begin  // if done write
                         addr_0 <= next_addr_0; // update addresses 
                         addr_1 <= next_addr_1; 
-                        if(instr_info.count <= 4) begin  // if done with command
+                        if(instr_info.count <= 5) begin  // if done with command
                             state <= FINISHED ;  
                         end else  begin 
                             // update count 
-                            instr_info.count <= instr_info.count - 4 ; // - SIMD WIDTH 
+                            instr_info.count <= instr_info.count - 5 ; // - SIMD WIDTH 
                             state <= FETCH1;  
                         end
                     //end 
@@ -198,6 +198,6 @@ end
     assign o_req_wr =  (state==WRITE) ? 1 : 0 ; 
     assign o_busy   =  (state==IDLE) ? 0 : 1 ;  
     assign o_finish =  (state==FINISHED) ? 1 : 0 ; 
-    assign o_wr_size=  (instr_info.count <= 4 ) ? instr_info.count : 4;  
+    assign o_wr_size=  (instr_info.count <= 5 ) ? instr_info.count : 5;  
 
 endmodule 

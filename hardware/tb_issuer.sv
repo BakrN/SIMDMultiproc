@@ -1,5 +1,5 @@
 `include "defines.sv"
-
+`include "issuer.sv"
 module issuer_tb; 
 parameter T = 10 ; 
 // Need to test command sources more thoroughly whether fromm queue or internal fifo
@@ -18,27 +18,25 @@ logic [`PROC_COUNT-1:0] o_en_proc;
 logic [`PROC_COUNT-1:0] o_ack_proc;
 instr_t o_instr;
 logic o_rd_queue;
-
+logic o_finished_task;
 issuer  u_issuer (
     .i_clk          ( i_clk           ),
     .i_rstn         ( i_rstn          ),
     .i_empty_queue  ( i_empty_queue   ),
-    .i_busy_proc    ( i_busy_proc     ),   
-    .i_finish_proc  ( i_finish_proc   ), 
+    .i_busy_proc    ( i_busy_proc     ), 
+    .i_finish_proc  ( i_finish_proc   ),
     .i_ack_proc     ( i_ack_proc      ),
     .i_cmd          (i_cmd            ),
     .o_en_proc      ( o_en_proc       ), 
     .o_ack_proc     (o_ack_proc       ),   
      .o_instr       ( o_instr         ),
-     .o_rd_queue    ( o_rd_queue      )
+     .o_rd_queue    ( o_rd_queue      ), 
+     .o_finished_task( o_finished_task) 
      );
 
 
-cmd_t nxt_cmd ; 
-// clock isntantiation  
-initial begin 
-   
-end
+cmd_t nxt_cmd ;
+// clock isntantiation
 initial begin 
 end 
 initial begin 

@@ -1,7 +1,7 @@
 # system  test 
 from typing import List, Union
 from model.mem import Mem  , MemHexSerializer
-from model.cmd import Command, gen_cmd_queue, CmdQueueSerializer , execute_cmd, Status
+from model.cmd import Command, gen_cmd_queue, CmdQueueSerializer , execute_cmd, Status , cmd_from_bin
 from model.proc import Pool
 import random 
 
@@ -17,35 +17,18 @@ mem_serializer.serialize("tests/shared_mem.txt")
 queue = gen_cmd_queue(CMD_COUNT,buffer)  
 
 serializer = CmdQueueSerializer(queue)# for teseting
-while not queue.empty(): 
-    for cmd in map(lambda x: x.data, queue.top_cmd): 
-        execute_cmd(cmd, buffer)
-        cmd.status = Status.DONE 
-    queue.update()  
 
+serializer.serialize("tests/cmd_queue.txt")
+commands = []
+# create list from file 
+with open("tests/cmd_queue.txt", "r") as f:
+    lines = f.readlines()
+    lines = list(map(lambda x: x.strip(), lines))
+    commands = list(map(lambda x: cmd_from_bin(x), lines)) 
 
-
+for cmd in commands:
+    execute_cmd(cmd, buffer) 
 
 mem_serializer.serialize("tests/valid_mem.txt")
 
-#serializer = CmdQueueSerializer(queue)# for teseting
-#print(serializer) 
-
-
-# Test Pattern of operations 
-
-# Element-wise adds 
-
-# Generate a list of Command for element-wise adds
-
-
-
-
-
-
-# Element-wise mult 
-
-# Element-wise adds + mult
-
-# Output to a file 
 
