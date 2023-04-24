@@ -46,7 +46,7 @@ always_comb begin
         adder[0] = adder[3] + mul_int[0][2]; // Y0
         adder[4] = mul_int[1][0] + mul_int[1][1] ;
         adder[1] =  adder[4]+ mul_int[1][2]; // Y1 ;
-        adder[5] = mul_int[2][0] + mul_int[2][1] ;
+        adder[5] = mul_int[2][0] + mul_int[2][1] ; 
         adder[2] =  adder[5]+ mul_int[2][2]; // Y2 ;
     end
 end

@@ -250,7 +250,7 @@ class CmdFetcher:
 #generate add cmd with a dependency parameter that is set to -1 by default 
 def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
-    cmd.id = id % (MAX_ID + 1)
+    cmd.id = max(id % (MAX_ID + 1), 1) 
     cmd.dep_id = dep_id
     cmd.opcode = Opcode.ADD
     cmd.addr0 = addr0
@@ -258,21 +258,10 @@ def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd.count = count % (MAX_COUNT + 1)
     cmd.writeback_addr = writeback_addr
     return cmd
-# generate a mul cmd 
-
-
-
-
-
-
-
-
-
-
 #generate a sub cmd
 def gen_sub_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
-    cmd.id = id  % (MAX_ID + 1)
+    cmd.id = max(id  % (MAX_ID + 1), 1) 
     cmd.dep_id = dep_id
     cmd.opcode = Opcode.SUB
     cmd.addr0 = addr0

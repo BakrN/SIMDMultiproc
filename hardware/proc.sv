@@ -28,7 +28,6 @@ module proc(
     o_finish , 
     o_req_rd, 
     o_req_wr, 
-    o_ack    , 
     o_data   ,  
     o_wr_size , 
     o_busy 
@@ -57,7 +56,6 @@ module proc(
     output logic o_req_rd;
     output logic o_req_wr;
     output o_busy;
-    output logic o_ack ;
     output addr_t o_addr ; // for accessing shared mem  
     output logic[2:0] o_wr_size;
     input logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
@@ -85,8 +83,8 @@ array u_simd_arr (
 
 // Next address 
 always_comb begin 
-    next_addr_0 = addr_0 + `BUS_W ; // bus size 
-    next_addr_1 = addr_1 + `BUS_W ; // bus size 
+    next_addr_0 = addr_0 + `BUS_W/`USIZE ; 
+    next_addr_1 = addr_1 + `BUS_W/`USIZE ; 
 end
 /* ---------------------------- FSM Definition ------------------------------- */
 
@@ -100,47 +98,51 @@ end
                 if (i_en) begin 
                     state <= LD1 ; 
                 end
-                o_ack <= 0 ; 
             end 
             LD1: begin 
+                $display ("[PROC] LD1 ");
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= LD2 ;   
                     addr_0 <= i_instr.payload ;  
-                    o_ack <= 1;  
                 end
                 else  begin 
                     state <= LD1;
                 end
             end 
             LD2: begin 
+                $display ("[PROC] LD2 ");
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= SET_INFO;   
                     addr_1 <= i_instr.payload ;  
-                    o_ack <= 1 ; 
                 end
                 else begin 
-                    o_ack <= 0 ; 
                     state <= LD2;
                 end
             end
             SET_INFO: begin 
+                $display ("[PROC] SET_INFO");
                 if (i_instr.opcode == INSTR_INFO && i_valid) begin  
                     state <= STORE;    
-                    instr_info <= i_instr.payload; 
-                    o_ack <= 1 ;  
+
+                    if (i_instr.payload.op >= 2) begin 
+                        instr_info.op = i_instr.payload.op ; 
+                        instr_info.count = i_instr.payload.op ; 
+                    end else begin
+                        instr_info <= i_instr.payload;  
+
+                    end
                 end
                 else begin 
-                    o_ack <= 0 ; 
+                    $display("Opcode: %b , valid? %b", i_instr.opcode, i_valid) ;  
                     state <= SET_INFO;
                 end
             end 
             STORE: begin 
+                $display ("[PROC] STORE");
                 if(i_instr.opcode == INSTR_STORE && i_valid) begin 
-                    state <= FETCH1 ; 
+                    state  <= FETCH1 ; 
                     wr_addr <= i_instr.payload; 
-                    o_ack <= 1 ; 
                 end else begin 
-                    o_ack <= 0 ; 
                     state <= STORE; 
                 end
             end
@@ -150,15 +152,22 @@ end
                     //if (1) begin  // if done read 
                         if (instr_info.op == 2) begin  // if matmul2x2 pad with zeros
                             reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE], i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}};
-                        end else 
+                        end else begin
                             reg0 <= i_data ;  
+                        end
                         state <= FETCH2 ;  
                     //end
-                end 
+                end  
+                $display ("[PROC] FETCH1 ");
             end
-            FETCH2: begin 
-                    reg1 <= i_data ; 
+            FETCH2: begin  
+                    if (instr_info.op==2)begin 
+                        reg1 <= {i_data[`BUS_W-1-:2*`USIZE] , {`USIZE{1'b0}}, {`USIZE{1'b0}}, {`USIZE{1'b0}}} ;
+                    end else begin 
+                        reg1 <= i_data ;
+                    end
                     state <= WRITE;  
+                $display ("[PROC] FETCH2 ");
             end
             
             WRITE: begin 
@@ -176,6 +185,7 @@ end
                         end
                     //end 
                 end
+                $display ("[PROC] WROTE");
             end
             FINISHED: begin 
                  // stall here  // wait until I recieve aknowledgement from issuer that scoreboard was flushed 
@@ -183,6 +193,7 @@ end
                     state <= IDLE ; 
                  end
                    
+                $display ("[PROC] FINISHED");
                  
             end
             default: 

@@ -16,7 +16,6 @@ module issuer (
     i_empty_queue, 
     o_rd_queue ,  
     // Proc ports
-    i_ack_proc , 
     i_finish_proc, 
     i_busy_proc  , 
     o_en_proc, // enable or validate instr to proc
@@ -29,7 +28,6 @@ input i_rstn ;
 input i_empty_queue; 
 input [`PROC_COUNT-1:0] i_busy_proc ; 
 input [`PROC_COUNT-1:0] i_finish_proc;  
-input [`PROC_COUNT-1:0] i_ack_proc ;
 output logic [`PROC_COUNT-1:0] o_en_proc ; 
 output logic [`PROC_COUNT-1:0] o_ack_proc ;  
 output instr_t o_instr;
@@ -51,20 +49,17 @@ localparam SIMD_LD1    = 4'd2 ;
 localparam SIMD_LD2    = 4'd3 ;
 localparam SIMD_INFO   = 4'd4 ;
 localparam SIMD_STORE  = 4'd5 ;
-localparam WAIT_ACK    = 4'd6 ;
 // fetching and processing from queue and checking with scoreboard 
-localparam CMD_GET =     4'd7 ; // get from queue or fifo
-localparam CMD_CHECK =     4'd8 ; // check dep with scoreboard
-localparam CAM_WRITE =     4'd9; // insert cmd in cam 
-localparam CMD_WRITEBACK = 4'd10 ; // (put dependent cmd in fifo) 
+localparam CMD_GET   =     4'd6 ; // get from queue or fifo
+localparam CMD_CHECK =     4'd7 ; // check dep with scoreboard
+localparam CAM_WRITE =     4'd8; // insert cmd in cam 
+localparam CMD_WRITEBACK = 4'd9 ; // (put dependent cmd in fifo) 
 
 // PROC_FINISH
 
-localparam PROC_FINISH = 4'd11 ; // Flush cmd from enq_cmd map 
-localparam SEND_ACK    = 4'd12 ; // send ack to proc out of find_first_set_bit 
+localparam PROC_FINISH = 4'd10 ; // Flush cmd from enq_cmd map 
  
 logic [3:0] state ; 
-logic [3:0] next_state ; 
 logic cycle_delay; 
 cmd_t next_cmd;  // next command to execute
 cmd_info_t next_cmd_info ; 
@@ -120,12 +115,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end else begin 
                     if (!cam_write_busy) begin 
                         cam_counter <= cam_counter -1 ; 
-                        state <= SEND_ACK;   
+                        state <= IDLE;   
                     end 
                 end
-            end 
-            SEND_ACK: begin 
-                state <= IDLE; 
             end 
             CMD_GET: begin 
                 if (cmd_source) begin// fifo
@@ -134,7 +126,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     next_cmd_info  <= 0 ; 
                 end else begin 
                     {current_cmd_id , current_dep_id ,next_cmd_info} <= i_cmd; 
-                    
+                    $display("Input command : %b", i_cmd);
                 end
                 state <= CMD_CHECK;
                 cycle_delay <= 1; 
@@ -189,31 +181,35 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             CMD_WRITEBACK: begin // writeback to fifo
                 state <= IDLE; 
             end
-            WAIT_ACK: begin 
-                if (i_ack_proc[selected_proc]) begin  
-                    state <= next_state; 
-                end
-            end
-
+            
             SIMD_SELECT: begin  
+                $display ("enable signal %b", o_en_proc ) ; 
                 if (i_busy_proc[selected_proc] == 0) begin 
+
+                    $display("IN SIMD_SELECT: Selected proc: %d  ", selected_proc);
                     state <= SIMD_LD1 ; 
                 end
                 else begin 
+                    $error("Selected proc shouldn't be zero") ; 
                     state <= SIMD_SELECT; 
                 end
+
             end  
             SIMD_LD1: begin  
-                state <= WAIT_ACK;  
+                state <= SIMD_LD2;  
+                $display("IN SIMD_LD1: Selected proc: %d  ", selected_proc);
             end
             SIMD_LD2: begin 
-                state <= WAIT_ACK;
+                state <= SIMD_INFO;
+                $display("IN SIMD_LD2");
             end
             SIMD_INFO: begin 
-                state <= WAIT_ACK; 
+                state <= SIMD_STORE; 
+                $display("IN SIMD_INFO");
             end
             SIMD_STORE: begin 
-                state <= WAIT_ACK;  
+                state <= IDLE;  
+                $display("IN SIMD_STORE");
             end
             default: 
                 state <= IDLE; 
@@ -222,31 +218,10 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
     end 
 end
 
-// Next state logic 
-always_latch begin 
-    case (state) 
-        SIMD_LD1 : begin 
-            next_state = SIMD_LD2 ; 
-        end 
-        SIMD_LD2 : begin 
-            next_state = SIMD_INFO ; 
-        end 
-        SIMD_INFO : begin 
-            next_state = SIMD_STORE; 
-        end  
-        SIMD_STORE: begin 
-            next_state = IDLE; 
-        end 
-
-        
-        
-        
-    endcase 
-end   
 /* ------------------- Logic For Instruction Generetation ------------------- */ 
 assign  o_instr = (state == SIMD_LD1) ? {  INSTR_LD, next_cmd.info.addr_0 } 
              : ((state == SIMD_LD2) ?    {  INSTR_LD, next_cmd.info.addr_1 }
-             : ((state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.info.count, next_cmd.info.op } }
+             : ((state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.info.count, next_cmd.info.op },0 }
              : ((state == SIMD_STORE) ?  {INSTR_STORE , next_cmd.info.wr_addr} : 0))) ;  
 
 /* ---------------------------- Priority find_first_set_bit for finished signals ---------------------------- */
@@ -409,8 +384,8 @@ always_ff @(posedge i_clk or negedge i_rstn)begin
 end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET)? 1 :0; 
-assign o_ack_proc = (state==SEND_ACK || (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO)) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
-assign o_en_proc = (state==SIMD_SELECT && i_busy_proc[selected_proc]==0) ? (`PROC_COUNT'b1 << finish_bit_pos): 0; 
+assign o_ack_proc = ( (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO || state==SIMD_STORE)) ? (`PROC_COUNT'b1 << selected_proc): ( (state==PROC_FINISH) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
+assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): 0; 
 assign o_finished_task = (state == IDLE && |i_busy_proc==0) ? 1 : 0;
 
 endmodule   

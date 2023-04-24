@@ -20,4 +20,5 @@ compiler/lib/*
 compiler/build/*
 compiler/compile_commands.json 
 compiler/.cache/*
+.nvim/*
 __pycache__

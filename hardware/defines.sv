@@ -36,10 +36,10 @@ typedef struct packed{
  
 
 typedef struct packed{
+        logic [1:0]  op ;  // add sub mul2x mul3x
         addr_t addr_0;    // Operand 0 address
         addr_t addr_1;    // Operand 1 address 
-        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;  // size of operation (how many elements) 
-        logic [1:0]  op ;  // add sub mul2x mul3x
+        logic [5:0] count;  // size of operation (how many elements) 
         addr_t wr_addr  ;  // result writeback_addr. 0 for addr_0 , 1 for addr_1 
 } cmd_info_t ;
 typedef struct packed{ 
