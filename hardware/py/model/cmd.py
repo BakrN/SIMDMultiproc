@@ -207,6 +207,7 @@ class CmdQueueSerializer: # serialize command queue
             while len(queue) > 0: 
                 next_queue = []
                 for node in queue: 
+                    node.data.dep_id = 0  # Delete this later
                     f.write(node.data.to_packed_bin() + "\n")
 
                     next_queue += node.children
@@ -251,7 +252,7 @@ class CmdFetcher:
 def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
     cmd.id = max(id % (MAX_ID + 1), 1) 
-    cmd.dep_id = dep_id
+    cmd.dep_id = 0 
     cmd.opcode = Opcode.ADD
     cmd.addr0 = addr0
     cmd.addr1 = addr1
@@ -262,7 +263,7 @@ def gen_add_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
 def gen_sub_cmd(id,  addr0, addr1, count, writeback_addr, dep_id=0):
     cmd = Command()
     cmd.id = max(id  % (MAX_ID + 1), 1) 
-    cmd.dep_id = dep_id
+    cmd.dep_id = 0 
     cmd.opcode = Opcode.SUB
     cmd.addr0 = addr0
     cmd.addr1 = addr1

@@ -1,7 +1,7 @@
 `include "top.sv"
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
-`define CMD_SIZE 1000
+`define CMD_SIZE 10
 `endif
 module tb_top() ;
 parameter T = 10 ;
@@ -22,7 +22,19 @@ top  u_top (
     .issuer_rd_queue          ( issuer_rd_queue ),
     .finished_task            ( finished_task)
 );
-
+// cmd queue 
+fifo#(
+    .WIDTH($bits(cmd_t)), 
+    .DEPTH(2**$clog2(`CMD_SIZE))
+    ) u_cmd_queue (
+    .i_clk ( i_clk   ) , 
+    .i_rstn( 1 )  , 
+    .i_read( issuer_rd_queue   ) , 
+    .i_write( 0   ), 
+    .i_data(  0  ) , 
+    .o_data(  nxt_cmd  ) , 
+    .o_fifo_empty ( queue_empty  ) 
+    ) ;
 initial begin
     forever begin
         i_clk = 0 ;
@@ -31,19 +43,28 @@ initial begin
         #(T/2) ;
     end
 end
+
 initial begin 
    $dumpfile("sim/tb_top.vcd");
    $dumpvars(0, u_top);
    $dumpvars(1, tb_top);
 end
-cmd_t cmd_queue [`CMD_SIZE-1:0] ; 
 // In this test I will just stall if there is a dependency 
-int mem_file ;
+int mem_file, init_mem_file  ;
 initial begin
     // Load initial mem 
     $readmemh("py/tests/shared_mem.txt",u_top.u_shared_mem.u_mem.r_mem);
+    init_mem_file = $fopen("py/tests/init_sim_mem.txt", "w");
+    for (int i = 0 ; i < `MEM_SIZE; i++) begin
+        $fdisplay(init_mem_file,"%h",u_top.u_shared_mem.u_mem.r_mem[i]);
+    end
+    $fclose(init_mem_file);
+
     $display("shared mem loaded");
-    $readmemb("py/tests/cmd_queue.txt",cmd_queue);
+    $readmemb("py/tests/cmd_queue.txt",u_cmd_queue.memory);
+    u_cmd_queue.readPtr =  0;
+    u_cmd_queue.writePtr = `CMD_SIZE ;
+    u_cmd_queue.o_count = `CMD_SIZE;
     $display("cmd queue loaded, cmd bits: %d", $bits(cmd_t));
     
     // reset 
@@ -51,29 +72,21 @@ initial begin
     #T ;
     i_rstn = 1 ;
     #T ;
-    queue_empty = 0 ;
-    nxt_cmd = cmd_queue[0] ;  
-    while (!issuer_rd_queue) begin
-        #T ;
-    end
-    #T ;
-    $display("cmd %d: %b",0,nxt_cmd); 
-    for (int i =1 ;i< 2 ; i++) begin
-        nxt_cmd = cmd_queue[i];  
-        $display("cmd %d: %b",i,nxt_cmd); 
-        while(!issuer_rd_queue) begin
-            #T ;
+    $display("is queue empty? %d", queue_empty);
+    while (!queue_empty) begin
+        if(issuer_rd_queue) begin
+            //$display("cmd: %b", nxt_cmd);
         end
         #T ; 
     end
-    $finish ;
-    queue_empty  = 1;
+    $display("is queue empty? %d", queue_empty);
+
     while (!finished_task) begin
         #T ;
     end
-    mem_file = $fopen("tests/sim_mem.txt", "w");
+    mem_file = $fopen("py/tests/sim_mem.txt", "w");
     for (int i = 0 ; i < `MEM_SIZE; i++) begin
-        $fdisplay(mem_file,"%h\n",u_top.u_shared_mem.u_mem.r_mem[i]);
+        $fdisplay(mem_file,"%h",u_top.u_shared_mem.u_mem.r_mem[i]);
     end
     $fclose(mem_file);
     $finish ; 

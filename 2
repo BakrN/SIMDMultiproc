@@ -65,7 +65,7 @@ module proc(
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
 logic [3:0] state ;   
-addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1  , wr_addr , next_wr_addr;   
+addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1  , wr_addr ;   
 cmd_id_t r_id ;  
 logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
@@ -85,7 +85,6 @@ array u_simd_arr (
 always_comb begin 
     next_addr_0 = addr_0 + `BUS_W/`USIZE ; 
     next_addr_1 = addr_1 + `BUS_W/`USIZE ; 
-    next_wr_addr= next_wr_addr+ `BUS_W/`USIZE ; 
 end
 /* ---------------------------- FSM Definition ------------------------------- */
 
@@ -182,7 +181,6 @@ end
                     //if (1)begin  // if done write
                         addr_0 <= next_addr_0; // update addresses 
                         addr_1 <= next_addr_1; 
-                        wr_addr <= next_wr_addr;
                         if(instr_info.count <= 5) begin  // if done with command
                             state <= FINISHED ;  
                         end else  begin 

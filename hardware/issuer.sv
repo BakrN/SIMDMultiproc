@@ -126,7 +126,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     next_cmd_info  <= 0 ; 
                 end else begin 
                     {current_cmd_id , current_dep_id ,next_cmd_info} <= i_cmd; 
-                    $display("Input command : %b", i_cmd);
+                    //$display("Input command : %b", i_cmd);
                 end
                 state <= CMD_CHECK;
                 cycle_delay <= 1; 
@@ -136,8 +136,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 if (cycle_delay) begin 
                     cycle_delay <= 0 ; 
                 end else begin 
-                $display("New command has id: %d , dep_id: %d", current_cmd_id , current_dep_id); 
-                $display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
+                //$display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
+                $display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
+                //$display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
                 cam_matched <= cam_match ; 
                 cam_matched_addr <= cam_match_addr ; 
                 state <= CAM_WRITE ; 
@@ -150,25 +151,25 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     cycle_delay <= 0; 
                 end 
                 else begin  
-                if (cmd_source) begin 
+                if (cmd_source) begin  
                     if (cam_matched) begin 
                         state <= CMD_WRITEBACK;  
-                        $display ("CMD still needs commadn to be executed. CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ; 
+                        //$display ("CMD still needs commadn to be executed. CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ; 
 
                     end else  begin 
-                        $display ("Dependency of command finished executing. CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ; 
+                        //$display ("Dependency of command finished executing. CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ; 
                         next_cmd_info <= buf_mem[buf_addr_r][buf_width-1:0] ;  
                         state <= SIMD_SELECT; 
                     end 
 
                 end else begin  // first time seeing command
                     if (!cam_write_busy) begin 
-                        $display ("Wrote this new data: %b to addr %h", cam_write_data,cam_write_addr ) ; 
+                        //$display ("Wrote this new data: %b to addr %h", cam_write_data,cam_write_addr ) ; 
                         if(cam_matched) begin 
-                            $display("Command will be written back to FIFO (dependency) , CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep);
+                            //$display("Command will be written back to FIFO (dependency) , CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep);
                             state <= CMD_WRITEBACK; 
                         end else begin
-                         $display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
+                         //$display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
 
                             cam_counter <= cam_counter + 1;  
                             state <= SIMD_SELECT; 
@@ -180,36 +181,31 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end
             CMD_WRITEBACK: begin // writeback to fifo
                 state <= IDLE; 
+                //$display ("Writing back to FIFO, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ;
             end
             
             SIMD_SELECT: begin  
-                $display ("enable signal %b", o_en_proc ) ; 
+                //$display ("enable signal %b", o_en_proc ) ; 
                 if (i_busy_proc[selected_proc] == 0) begin 
 
-                    $display("IN SIMD_SELECT: Selected proc: %d  ", selected_proc);
                     state <= SIMD_LD1 ; 
                 end
                 else begin 
                     $error("Selected proc shouldn't be zero") ; 
                     state <= SIMD_SELECT; 
                 end
-
             end  
             SIMD_LD1: begin  
                 state <= SIMD_LD2;  
-                $display("IN SIMD_LD1: Selected proc: %d  ", selected_proc);
             end
             SIMD_LD2: begin 
                 state <= SIMD_INFO;
-                $display("IN SIMD_LD2");
             end
             SIMD_INFO: begin 
                 state <= SIMD_STORE; 
-                $display("IN SIMD_INFO");
             end
             SIMD_STORE: begin 
                 state <= IDLE;  
-                $display("IN SIMD_STORE");
             end
             default: 
                 state <= IDLE; 
@@ -219,11 +215,36 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
 end
 
 /* ------------------- Logic For Instruction Generetation ------------------- */ 
-assign  o_instr = (state == SIMD_LD1) ? {  INSTR_LD, next_cmd.info.addr_0 } 
-             : ((state == SIMD_LD2) ?    {  INSTR_LD, next_cmd.info.addr_1 }
-             : ((state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.info.count, next_cmd.info.op },0 }
-             : ((state == SIMD_STORE) ?  {INSTR_STORE , next_cmd.info.wr_addr} : 0))) ;  
 
+always_comb begin 
+    case (state)
+        SIMD_LD1: begin
+            o_instr.opcode  = INSTR_LD; 
+            o_instr.payload = next_cmd_info.addr_0 ; 
+        end
+        SIMD_LD2: begin 
+            o_instr.opcode  = INSTR_LD; 
+            o_instr.payload = next_cmd_info.addr_1; 
+        end
+        SIMD_INFO: begin
+            o_instr.opcode = INSTR_INFO;   
+            o_instr.payload.info.op = next_cmd_info.op; 
+            o_instr.payload.info.count= next_cmd_info.count; 
+        end
+        SIMD_STORE: begin
+            o_instr.opcode  = INSTR_STORE ; 
+            o_instr.payload = next_cmd_info.wr_addr ; 
+        end
+        default: begin
+            o_instr = 0 ; 
+        end
+    endcase
+end
+//assign  o_instr = (state == SIMD_LD1) ? {  INSTR_LD, next_cmd.info.addr_0 } 
+//             : ((state == SIMD_LD2) ?    {  INSTR_LD, next_cmd.info.addr_1 }
+//             : ((state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.info.count, next_cmd.info.op }}
+//             : ((state == SIMD_STORE) ?  {INSTR_STORE , next_cmd.info.wr_addr} : 0))) ;  
+//
 /* ---------------------------- Priority find_first_set_bit for finished signals ---------------------------- */
 logic [$clog2(`PROC_COUNT)-1:0] finish_bit_pos, finished_proc ;  
 logic [$clog2(`PROC_COUNT)-1:0] selected_proc, free_proc; // selected_proc is updated on clk cycles. so not using combinational logic 
@@ -298,7 +319,7 @@ logic [1:0]  select_mask ;
 
 assign cam_compare_data = (state==CMD_CHECK) ? {next_cmd.dep, {$clog2(`PROC_COUNT){1'b0}}}: ((state==CAM_WRITE)?{next_cmd.id, {$clog2(`PROC_COUNT){1'b0}}} : {{$bits(cmd_id_t){1'b0}}, finished_proc} ); // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this 
 // TODO:  After some testing, we need to add a slice selector to the cam. (to choose if our matching algorithm should be based on command only , proc only or both) (very important)
-assign cam_write_addr   = ( state==PROC_FINISH||cmd_source) ? cam_matched_addr : cam_counter;  // ! Should redefine cam_nxt_addr. For now (test) this will be set to cam_counter
+assign cam_write_addr   = ( state==PROC_FINISH||cmd_source) ? cam_matched_addr : cam_nxt_addr;  // ! Should redefine cam_nxt_addr. For now (test) this will be set to cam_counter
 assign cam_write_data   = {next_cmd.id , selected_proc} ;
 assign cam_write_enable = (((state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source)) )||cam_write_delete) && cycle_delay) ? 1 : 0 ;  
 assign cam_write_delete = (state==PROC_FINISH && cycle_delay) ? 1 : 0;  

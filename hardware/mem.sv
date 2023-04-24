@@ -14,10 +14,13 @@ reg [SIZE-1:0] r_mem [DEPTH-1:0];
     //o_data = addr, addr+1, addr+2, addr+3, addr+4
 always_ff @(posedge i_clk)  begin 
    for (int i = 0 ; i < BLOCK_SIZE; i++) begin
-       if (i_wr_en &&  (i<i_wr_size)) begin
+       if (i_wr_en &&  (i<i_wr_size)) begin 
            r_mem[i_addr_w + i] <= i_data_w[BLOCK_SIZE-1-i];
        end
    end
+   if (i_wr_en) begin 
+        //$display("i_addr_w = %h,   size = %h", i_addr_w, i_wr_size);
+    end
 end
 always_comb begin 
     for (int i = 0; i < BLOCK_SIZE ; i++) begin

@@ -77,7 +77,7 @@ shared_mem #(
         .BUS_SIZE ( `BUS_W   ),
         .MEM_SIZE (`MEM_SIZE), 
         .UNIT_SIZE(`USIZE),
-        .ADDR_SIZE (24) 
+        .ADDR_SIZE ($bits(addr_t)) 
     )
     u_shared_mem (
     .i_clk          ( i_clk          ),

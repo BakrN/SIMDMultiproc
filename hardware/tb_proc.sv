@@ -27,7 +27,6 @@ module proc_tb;
     logic o_req_rd;
     logic o_req_wr;
     logic o_busy;
-    logic o_ack;
     addr_t o_addr;
     logic[2:0] o_wr_size;
     logic [4:0][31:0] o_data;
@@ -44,7 +43,6 @@ module proc_tb;
         .o_req_rd                (       o_req_rd       ),
         .o_req_wr                (       o_req_wr       ),
         .o_busy                  (       o_busy         ),
-        .o_ack                   (       o_ack          ),
         .o_addr                  (       o_addr         ),
         .o_wr_size               (       o_wr_size      ),
         .o_data                  (       o_data         )
@@ -168,17 +166,17 @@ module proc_tb;
           //`assert_equals(u_proc.state, u_proc.LD2 , "Should be on ld2")  
           #T; 
           i_instr.opcode = INSTR_INFO ; 
-          i_instr.payload.count = 5;  
-          i_instr.payload.op    = op;  // add  
+          i_instr.payload.info.count = 5;  
+          i_instr.payload.info.op    = op;  // add  
           //`assert_equals(u_proc.state, u_proc.SET_INFO, "SET_INFO")  
           #T ; 
           i_instr.opcode = INSTR_STORE ;
           //`assert_equals(u_proc.state, u_proc.STORE, "STORE")  
           #T; 
-          //`assert_equals(u_proc.state, u_proc.FETCH1, "should be on fetch1")  
+          `assert_equals(u_proc.state, u_proc.FETCH1, "should be on fetch1")  
           $fscanf(f_input,"%h,%h,%h,%h,%h\n",i_data[4],i_data[3], i_data[2] , i_data[1], i_data[0]);
           #T; 
-          //`assert_equals(u_proc.state, u_proc.FETCH2, "should be on fetch2")  
+          `assert_equals(u_proc.state, u_proc.FETCH2, "should be on fetch2")  
           $fscanf(f_input,"%h,%h,%h,%h,%h\n" ,i_data[4], i_data[3], i_data[2] , i_data[1], i_data[0]);
           #T;  
           //`assert_equals(u_proc.state, u_proc.WRITE, "Should be on write")   

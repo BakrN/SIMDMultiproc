@@ -23,15 +23,20 @@ typedef struct packed{
 typedef enum logic [1:0] {INSTR_LD, INSTR_INFO, INSTR_STORE} opcode_t; 
 // Write: contains addr or index and size of data to overwrite
 // set info:  set size 
+
 typedef struct packed { 
-        logic [$clog2(2**$bits(addr_t)/`UNIT_SIZE)-1:0] count;  // How many elements 
         logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul2x , 3 for mul3x
+        logic [5:0] count;  // How many elements A
+        logic [$bits(addr_t)-1-8:0] null_placeholder; // null_placeholder
 } instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
-
+typedef union packed { 
+    addr_t addr ;
+    instr_info_t info ;
+} payload_t ;
 typedef struct packed{ 
         opcode_t  opcode  ; 
-        addr_t    payload ;  
+        payload_t payload ;  
 }instr_t;   // Instruction run on each proc
  
 
@@ -57,6 +62,7 @@ typedef struct packed {
 `define assert_equals(signal1, signal2, message) \
   if (signal1 !== signal2) begin \
     $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
+    $finish; \
   end else begin \
     $display("signal1: %d and signal2: %d were equal", signal1, signal2); \
   end

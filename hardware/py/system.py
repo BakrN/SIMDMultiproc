@@ -5,9 +5,9 @@ from model.cmd import Command, gen_cmd_queue, CmdQueueSerializer , execute_cmd, 
 from model.proc import Pool
 import random 
 
-MEM_SIZE = 4096
+MEM_SIZE = 1024 
 PROC_COUNT = 4
-CMD_COUNT = 1000
+CMD_COUNT = 10  
 
 
 buffer = Mem(MEM_SIZE).randomize()    
