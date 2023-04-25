@@ -233,7 +233,7 @@ always_comb begin
         end
         SIMD_STORE: begin
             o_instr.opcode  = INSTR_STORE ; 
-            o_instr.payload = next_cmd_info.wr_addr ; 
+            o_instr.payload.addr = next_cmd_info.wr_addr; 
         end
         default: begin
             o_instr = 0 ; 

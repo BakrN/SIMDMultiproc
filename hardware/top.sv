@@ -44,9 +44,13 @@ logic[`PROC_COUNT-1:0]  pool_req_rd;
 logic[`PROC_COUNT-1:0]  pool_req_wr;
 logic[`PROC_COUNT-1:0]  pool_finish;
 logic[`PROC_COUNT-1:0]  pool_busy;
-logic [`BUS_W-1:0] pool_data [`PROC_COUNT-1:0];
-addr_t pool_addr [`PROC_COUNT-1:0];
-logic [2:0] pool_wr_size [`PROC_COUNT-1:0];
+wire [`BUS_W-1:0] pool_data [`PROC_COUNT-1:0];
+wire [$bits(addr_t)-1:0]pool_addr [`PROC_COUNT-1:0];
+wire[2:0] pool_wr_size [`PROC_COUNT-1:0];
+
+
+
+
 
 pool  u_pool (
     .i_instr            (     issuer_instr      ),

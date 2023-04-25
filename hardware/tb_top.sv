@@ -47,7 +47,7 @@ end
 initial begin 
    $dumpfile("sim/tb_top.vcd");
    $dumpvars(0, u_top);
-   $dumpvars(1, tb_top);
+   $dumpvars(1, u_top.u_pool);
 end
 // In this test I will just stall if there is a dependency 
 int mem_file, init_mem_file  ;

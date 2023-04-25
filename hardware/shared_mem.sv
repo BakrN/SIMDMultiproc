@@ -32,6 +32,8 @@ module shared_mem #(parameter PORT_COUNT = 4,
     input addr_t i_proc_addr [PORT_COUNT-1:0];   // read addresses of all processors 
     logic [BUS_SIZE-1:0] rd_data;
     logic [BUS_SIZE-1:0] wr_data;
+    
+    // direct input
     logic [2:0] wr_size ;
     logic wr_en ;
     addr_t wr_addr;
@@ -49,17 +51,18 @@ module shared_mem #(parameter PORT_COUNT = 4,
     .i_req    ( i_req_wr              ),
     .o_grant  ( o_grant_wr            )
     );
-    assign wr_en = |o_grant_wr;
+    assign wr_en =  o_grant_wr[enc_wr] ; //|o_grant_wr;
     assign wr_addr = i_proc_addr[enc_wr];
-    assign wr_size = i_wr_size[enc_wr];
-    assign wr_data = i_proc_wr[enc_wr];
-    assign rd_addr = i_proc_addr[enc_rd];
+    assign wr_size = i_wr_size  [enc_wr];
+    assign wr_data = i_proc_wr  [enc_wr];
+    assign rd_addr = i_proc_addr[enc_rd]; 
+    
     mem_mod#(.DEPTH(MEM_SIZE),.BLOCK_SIZE(BUS_SIZE/UNIT_SIZE), .SIZE(UNIT_SIZE), .ADDR_SIZE(ADDR_SIZE))  u_mem (
     .i_clk                   ( i_clk     ),
     .i_addr_w                ( wr_addr   ),
     .i_data_w                ( wr_data   ),
-    .i_wr_size               (  wr_size  ),
-    .i_wr_en                 ( wr_en     ),
+    .i_wr_size               ( wr_size  ),
+    .i_wr_en                 (wr_en), // for now try without any writes
     .i_addr_r                ( rd_addr   ),
     .o_data                  ( o_proc_rd   )
     );

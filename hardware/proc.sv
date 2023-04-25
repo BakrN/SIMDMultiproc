@@ -52,20 +52,25 @@ module proc(
     input i_grant_rd ;
     input i_grant_wr ;
     input i_valid ; // also used for ack in finished stage 
+    input  logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
     output o_finish;
     output logic o_req_rd;
     output logic o_req_wr;
     output o_busy;
     output addr_t o_addr ; // for accessing shared mem  
     output logic[2:0] o_wr_size;
-    input logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
     output logic [`BUS_W-1:0]  o_data;
 
 
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
 logic [3:0] state ;   
-addr_t addr_0 , addr_1 , next_addr_0 ,next_addr_1  , wr_addr , next_wr_addr;   
+addr_t addr_0 ;
+addr_t addr_1 ; 
+addr_t next_addr_0 ; 
+addr_t next_addr_1 ; 
+addr_t wr_addr ; 
+addr_t next_wr_addr; 
 cmd_id_t r_id ;  
 logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
@@ -83,9 +88,9 @@ array u_simd_arr (
 
 // Next address 
 always_comb begin 
-    next_addr_0 = addr_0 + `BUS_W/`USIZE ; 
-    next_addr_1 = addr_1 + `BUS_W/`USIZE ; 
-    next_wr_addr= next_wr_addr+ `BUS_W/`USIZE ; 
+    next_addr_0 = addr_0  + `BUS_W/`USIZE ; 
+    next_addr_1 = addr_1  + `BUS_W/`USIZE ; 
+    next_wr_addr= wr_addr + `BUS_W/`USIZE ; 
 end
 /* ---------------------------- FSM Definition ------------------------------- */
 
@@ -101,7 +106,6 @@ end
                 end
             end 
             LD1: begin 
-                //$display ("[PROC] LD1 ");
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= LD2 ;   
                     addr_0 <= i_instr.payload ;  
@@ -111,7 +115,6 @@ end
                 end
             end 
             LD2: begin 
-                //$display ("[PROC] LD2 ");
                 if (i_instr.opcode == INSTR_LD && i_valid) begin 
                     state <= SET_INFO;   
                     addr_1 <= i_instr.payload ;  
@@ -121,7 +124,6 @@ end
                 end
             end
             SET_INFO: begin 
-                //$display ("[PROC] SET_INFO");
                 if (i_instr.opcode == INSTR_INFO && i_valid) begin  
                     state <= STORE;    
 
@@ -129,32 +131,31 @@ end
                         instr_info.op = i_instr.payload.info.op ; 
                         instr_info.count = i_instr.payload.info.op ; 
                     end else begin 
-                        //$display ("count: %d , op: %d",  i_instr.payload.info.count, i_instr.payload.info.op);
                         instr_info.op <= i_instr.payload.info.op; 
                         instr_info.count <= i_instr.payload.info.count; 
 
                     end
                 end
                 else begin 
-                 //   $display("Opcode: %b , valid? %b", i_instr.opcode, i_valid) ;  
                     state <= SET_INFO;
                 end
 
             end 
             STORE: begin 
-                //$display ("[PROC] STORE");
                 if(i_instr.opcode == INSTR_STORE && i_valid) begin 
-                    state  <= FETCH1 ; 
                     wr_addr <= i_instr.payload; 
+                    state  <= FETCH1 ; 
+
+
                 end else begin 
                     state <= STORE; 
                 end
             end
             // FSM Process 
             FETCH1: begin 
+                $display ("wr address: %d", wr_addr);
                 if(i_grant_rd) begin 
-                    $display ("fetch1 %h", i_data) ; 
-                    $display ("Fetch1 happending. addr0: %d, addr1: %d, op: %d, count: %d, writeback:%d", addr_0, addr_1, instr_info.op, instr_info.count, wr_addr);
+                    $display ("Fetch1 happending. addr0: %d, addr1: %d, op: %d, count: %d, writeback:%d, o_wr_size: %d", addr_0, addr_1, instr_info.op, instr_info.count, o_addr, o_wr_size);
                     //if (1) begin  // if done read 
                         if (instr_info.op == 2) begin  // if matmul2x2 pad with zeros
                             reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE], i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}};
@@ -164,7 +165,7 @@ end
                         state <= FETCH2 ;  
                     //end
                 end  
-                //$display ("[PROC] FETCH1 ");
+                $display ("[PROC] FETCH1 , i_addr: %d, i_data: %h", addr_0, i_data);
             end
             FETCH2: begin  
                     if (instr_info.op==2)begin 
@@ -173,7 +174,7 @@ end
                         reg1 <= i_data ;
                     end
                     state <= WRITE;  
-                //$display ("[PROC] FETCH2 ");
+                $display ("[PROC] FETCH2 , i_addr: %d, i_data: %h", addr_1, i_data);
             end
             
             WRITE: begin 
@@ -192,7 +193,7 @@ end
                         end
                     //end 
                 end
-                //$display ("[PROC] WROTE");
+                $display ("[PROC] WROTE: %d", o_data);
             end
             FINISHED: begin 
                  // stall here  // wait until I recieve aknowledgement from issuer that scoreboard was flushed 
@@ -211,10 +212,10 @@ end
     end
 
 
-    assign o_addr   =  wr_addr; 
+    assign o_addr   =  (state==FETCH1)? addr_0: ((state==FETCH2) ? addr_1: wr_addr); 
     assign o_req_rd =  ((state==FETCH1)|| (state==FETCH2) ) ? 1 : 0 ;  
     assign o_req_wr =  (state==WRITE) ? 1 : 0 ; 
-    assign o_busy   =  (state==IDLE) ? 0 : 1 ;  
+    assign o_busy   =  (state==IDLE ) ? 0 : 1 ;  
     assign o_finish =  (state==FINISHED) ? 1 : 0 ; 
     assign o_wr_size=  (instr_info.count <= 5 ) ? instr_info.count : 5;  
 
