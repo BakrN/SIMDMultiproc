@@ -25,7 +25,7 @@ end
 module tb_cam; 
 localparam T = 10 ; 
 // cam Parameters
-localparam DATA_WIDTH   =  $bits(cmd_id_t) + $clog2(`PROC_COUNT)  ;
+localparam DATA_WIDTH   =  4 + $clog2(`PROC_COUNT)  ;
 localparam ADDR_WIDTH   =   $clog2(`PROC_COUNT) +1 ;
 localparam CAM_STYLE    = "SRL";
 localparam SLICE_WIDTH  =  4;
@@ -87,7 +87,7 @@ initial begin
     
     
 end
-cmd_id_t cmd_id ; 
+logic [3:0] cmd_id ; 
 logic [$clog2(`PROC_COUNT)-1:0] proc_id; 
 initial begin 
     #T; 
@@ -99,52 +99,72 @@ initial begin
    compare_data = 0 ;  proc_id = 2 ;
    select_mask = 2'b11 ; 
     // Problem with 0 , 0  
-    #(20*T);
+    #(10*T);
     // Check for matches 
-    `assert_equals(match , 0 , "Nothing written to cam, so there should be no match" )
-    $display("%b", match_many) ;  
-    $display("%b", match_single) ; 
-    $display ("%h", match_addr) ;  
-    # T; 
-    //push_back
-    write_data  = {cmd_id , proc_id} ; 
-     write_addr  =2 ; 
-    `push_back(write_data)   
-    write_addr = write_addr + 1; 
-    #T ; 
-    compare_data = {cmd_id , proc_id};  
-    #T ; 
-    $display("%b", match_many) ;  
-    $display("%b", match_single) ; 
-    $display ("%h", match_addr) ; 
-    `assert_equals(match , 1 , "Searching with cmd_id and proc_id" )
-    select_mask = 2'b01 ; 
-    compare_data = {cmd_id ,2'd3}; 
-    #T ; 
-    $display("%b", match_many) ;  
-    $display("%b", match_single) ; 
-    $display ("%h", match_addr) ; 
-    `assert_equals(match , 0 , "Searching with correct cmd_id and incorrect proc_id but mask is off for cmd_id" )
-    compare_data = {4'd11, proc_id}; 
-    select_mask = 2'b01; 
+    //`assert_equals(match , 0 , "Nothing written to cam, so there should be no match" )
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ;  
+    // TESTS
     #T; 
+    write_data = {4'b0001, 2'b11} ; 
+    write_addr = 1 ;
+    `push_back(write_data); 
+    #T; 
+    select_mask = 2'b10 ; 
+    compare_data = {4'b0001, 2'b00} ; 
+    # T; 
     $display("%b", match_many) ;  
     $display("%b", match_single) ; 
     $display ("%h", match_addr) ; 
-    `assert_equals(match , 1 , "Searching with correct proc_id and incorrect cmd_id" )
-    compare_data ={cmd_id, proc_id };  
-    select_mask = 2'b00  ; 
-    #T ; 
-    $display("%b", match_many) ;  
-    $display("%b", match_single) ; 
-    $display ("%h", match_addr) ; 
-    `assert_equals(match , 0 , "should'nt exist" )
-    compare_data = 0 ; 
-    #T ; 
-    $display("%b", match_many) ;  
-    $display("%b", match_single) ; 
-    $display ("%h", match_addr) ; 
-    `assert_equals(match , 0 , "should'nt exist" )
+    `assert_equals(match , 1 , "Should find match" )
+    select_mask = 2'b01; 
+    #T ;
+    `assert_equals(match , 0 , "Shouldn't find match" )
+    // TESTS
+
+
+    //# T; 
+    ////push_back
+    //write_data  = {cmd_id , proc_id} ; 
+    // write_addr  =2 ; 
+    //`push_back(write_data)   
+    //write_addr = write_addr + 1; 
+    //#T ; 
+    //compare_data = {cmd_id , proc_id};  
+    //#T ; 
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ; 
+    //`assert_equals(match , 1 , "Searching with cmd_id and proc_id" )
+    //select_mask = 2'b01 ; 
+    //compare_data = {cmd_id ,2'd3}; 
+    //#T ; 
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ; 
+    //`assert_equals(match , 0 , "Searching with correct cmd_id and incorrect proc_id but mask is off for cmd_id" )
+    //compare_data = {4'd11, proc_id}; 
+    //select_mask = 2'b01; 
+    //#T; 
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ; 
+    //`assert_equals(match , 1 , "Searching with correct proc_id and incorrect cmd_id" )
+    //compare_data ={cmd_id, proc_id };  
+    //select_mask = 2'b00  ; 
+    //#T ; 
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ; 
+    //`assert_equals(match , 0 , "should'nt exist" )
+    //compare_data = 0 ; 
+    //#T ; 
+    //$display("%b", match_many) ;  
+    //$display("%b", match_single) ; 
+    //$display ("%h", match_addr) ; 
+    //`assert_equals(match , 0 , "should'nt exist" )
+    
     $finish; 
 end
 

@@ -56,7 +56,8 @@ module cam #(
     output wire [2**ADDR_WIDTH-1:0] match_many,
     output wire [2**ADDR_WIDTH-1:0] match_single,
     output wire [ADDR_WIDTH-1:0]    match_addr,
-    output wire                     match
+    output wire                     match , 
+    output wire setup 
 );
 
 generate
@@ -79,7 +80,8 @@ generate
             .match_many(match_many),
             .match_single(match_single),
             .match_addr(match_addr),
-            .match(match)
+            .match(match), 
+            .setup(setup)
         );
     end
 endgenerate

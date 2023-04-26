@@ -154,19 +154,16 @@ end
             end
             // FSM Process 
             FETCH1: begin 
-                $display ("wr address: %d", wr_addr);
                 if(i_grant_rd) begin 
-                    $display ("Fetch1 happending. addr0: %d, addr1: %d, op: %d, count: %d, writeback:%d, o_wr_size: %d", addr_0, addr_1, instr_info.op, instr_info.count, o_addr, o_wr_size);
-                    //if (1) begin  // if done read 
+                    //$display ("Fetch1 happending. addr0: %d, addr1: %d, op: %d, count: %d, writeback:%d, o_wr_size: %d", addr_0, addr_1, instr_info.op, instr_info.count, o_addr, o_wr_size);
                         if (instr_info.op == 2) begin  // if matmul2x2 pad with zeros
                             reg0 <= {{`USIZE{1'b0}}, i_data[`BUS_W-1-:`USIZE] ,i_data[`BUS_W-`USIZE-1-:`USIZE], i_data[`BUS_W-2*`USIZE-1-:`USIZE], {`USIZE{1'b0}}};
                         end else begin
                             reg0 <= i_data ;  
                         end
                         state <= FETCH2 ;  
-                    //end
                 end  
-                $display ("[PROC] FETCH1 , i_addr: %d, i_data: %h", addr_0, i_data);
+                //$display ("[PROC] FETCH1 , i_addr: %d, i_data: %h", addr_0, i_data);
             end
             FETCH2: begin  
                     if (instr_info.op==2)begin 
@@ -175,7 +172,7 @@ end
                         reg1 <= i_data ;
                     end
                     state <= WRITE;  
-                $display ("[PROC] FETCH2 , i_addr: %d, i_data: %h", addr_1, i_data);
+                //$display ("[PROC] FETCH2 , i_addr: %d, i_data: %h", addr_1, i_data);
             end
             
             WRITE: begin 
@@ -194,7 +191,7 @@ end
                         end
                     //end 
                 end
-                $display ("[PROC] WROTE: %d", o_data);
+                //$display ("[PROC] WROTE: %d", o_data);
             end
             FINISHED: begin 
                  // stall here  // wait until I recieve aknowledgement from issuer that scoreboard was flushed 

@@ -17,15 +17,15 @@ mem_serializer.serialize("tests/shared_mem.txt")
 #queue = gen_cmd_queue(CMD_COUNT,buffer)  
 queue = CmdQueue() 
 # create cmd 
-cmd0 = gen_add_cmd(1 , 0 , 100 ,100 , 0  ) 
-cmd1 = gen_add_cmd(2 , 200 , 400 ,100, 300  )  
-cmd2 = gen_sub_cmd(3 , 600 , 800 , 200 , 700  )
+cmd0 = gen_add_cmd(1 , 0  , 100 , 20 , 20) 
+cmd1 = gen_sub_cmd(2 , 30 , 400 , 35, 300  ,1 )  # depends on cmd0
+cmd2 = gen_sub_cmd(3 , 332, 800 , 200 , 700 ,2 ) # depends on cmd1
 queue.add_cmd(cmd0)
 queue.add_cmd(cmd1)
 queue.add_cmd(cmd2)
 
 serializer = CmdQueueSerializer(queue)# for teseting
-
+print(serializer)
 serializer.serialize("tests/cmd_queue.txt")
 commands = []
 # create list from file 

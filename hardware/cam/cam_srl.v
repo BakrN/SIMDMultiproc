@@ -53,9 +53,11 @@ module cam_srl #(
     output wire [2**ADDR_WIDTH-1:0] match_many,
     output wire [2**ADDR_WIDTH-1:0] match_single,
     output wire [ADDR_WIDTH-1:0]    match_addr,
-    output wire                     match
-);
+    output wire                     match, 
+    output wire setup
 
+);
+assign setup = (state_reg == STATE_INIT) ;
 // total number of slices (enough to cover DATA_WIDTH with address inputs)
 localparam SLICE_COUNT = (DATA_WIDTH + SLICE_WIDTH - 1) / SLICE_WIDTH;
 // depth of RAMs

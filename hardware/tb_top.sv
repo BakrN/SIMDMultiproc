@@ -75,7 +75,7 @@ initial begin
     $display("is queue empty? %d", queue_empty);
     while (!queue_empty) begin
         if(issuer_rd_queue) begin
-            //$display("cmd: %b", nxt_cmd);
+            $display("cmd: %b", nxt_cmd);
         end
         #T ; 
     end

@@ -20,17 +20,17 @@ always_ff @(posedge i_clk)  begin
            r_mem[i_addr_w + i] <= i_data_w[(BLOCK_SIZE-i)*SIZE-1-:SIZE];
        end
    end
-   if (i_wr_en) begin 
-        $display("i_addr_w = %h,   size = %h, data: %h", i_addr_w, i_wr_size, i_data_w);
-    end
+   //if (i_wr_en) begin 
+   //     //$display("i_addr_w = %h,   size = %h, data: %h", i_addr_w, i_wr_size, i_data_w);
+   // end
 end
 always_comb begin 
     for (int i = 0; i < BLOCK_SIZE ; i++) begin
         o_data[(i+1)*SIZE-1-:SIZE]  = r_mem[i_addr_r + (BLOCK_SIZE-1-i)];
     end 
 end
-always @(i_addr_r) begin 
-    $display("i_addr_r = %h,   data: %h", i_addr_r, o_data);
-end
+//always @(i_addr_r) begin 
+//    $display("i_addr_r = %h,   data: %h", i_addr_r, o_data);
+//end
 endmodule
 `endif

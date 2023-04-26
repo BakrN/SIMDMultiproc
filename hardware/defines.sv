@@ -57,7 +57,8 @@ typedef struct packed{
 
 typedef struct packed { 
       cmd_id_t id ; 
-      cmd_id_t dep ; // dep id
+      cmd_id_t dep ; // dep id 
+      logic[$clog2(`MAX_CMDS)-1:0] entry_idx;// position of cmd info stored instr 
 } dep_cmd_t ; 
 `define assert_equals(signal1, signal2, message) \
   if (signal1 !== signal2) begin \
