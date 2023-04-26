@@ -30,6 +30,7 @@ module proc(
     o_req_wr, 
     o_data   ,  
     o_wr_size , 
+    o_wr_en , 
     o_busy 
 ); 
 /* ---------------------------- Local Parameters ---------------------------- */
@@ -60,7 +61,7 @@ module proc(
     output addr_t o_addr ; // for accessing shared mem  
     output logic[2:0] o_wr_size;
     output logic [`BUS_W-1:0]  o_data;
-
+    output o_wr_en ;
 
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
@@ -218,5 +219,5 @@ end
     assign o_busy   =  (state==IDLE ) ? 0 : 1 ;  
     assign o_finish =  (state==FINISHED) ? 1 : 0 ; 
     assign o_wr_size=  (instr_info.count <= 5 ) ? instr_info.count : 5;  
-
+    assign o_wr_en =  (state==WRITE && i_grant_wr) ? 1 : 0 ;
 endmodule 

@@ -44,6 +44,7 @@ logic[`PROC_COUNT-1:0]  pool_req_rd;
 logic[`PROC_COUNT-1:0]  pool_req_wr;
 logic[`PROC_COUNT-1:0]  pool_finish;
 logic[`PROC_COUNT-1:0]  pool_busy;
+logic[`PROC_COUNT-1:0]  pool_wr_en;
 wire [`BUS_W-1:0] pool_data [`PROC_COUNT-1:0];
 wire [$bits(addr_t)-1:0]pool_addr [`PROC_COUNT-1:0];
 wire[2:0] pool_wr_size [`PROC_COUNT-1:0];
@@ -67,6 +68,7 @@ pool  u_pool (
     .o_busy             (     pool_busy         ),
     .o_data             (     pool_data         ),
     .o_addr             (     pool_addr         ),
+    .o_wr_en            (     pool_wr_en        ),
     .o_wr_size          (     pool_wr_size      )
     
 );
@@ -89,7 +91,8 @@ shared_mem #(
     .i_req_rd       ( pool_req_rd    ),
     .i_req_wr       ( pool_req_wr    ),
     .i_proc_wr      ( pool_data      ),
-    .i_wr_size      ( pool_wr_size   ),
+    .i_wr_size      ( pool_wr_size   ), 
+    .i_wr_en        ( pool_wr_en     ),
     .i_proc_addr    ( pool_addr      ),
     .o_grant_rd     ( mem_grant_rd   ), 
     .o_grant_wr     ( mem_grant_wr   ),

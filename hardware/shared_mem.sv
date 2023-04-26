@@ -16,6 +16,7 @@ module shared_mem #(parameter PORT_COUNT = 4,
     i_wr_size   , 
     i_req_rd    ,  
     i_req_wr    , 
+    i_wr_en     , 
     o_grant_rd  , 
     o_grant_wr
 ) ;
@@ -23,7 +24,7 @@ module shared_mem #(parameter PORT_COUNT = 4,
     input i_clk   ;
     input i_rstn  ;
     // Arbiter 
-    input [PORT_COUNT-1:0] i_req_rd , i_req_wr;
+    input [PORT_COUNT-1:0] i_req_rd , i_req_wr, i_wr_en;
     output [PORT_COUNT-1:0] o_grant_rd, o_grant_wr;
     // mem info
     output logic [BUS_SIZE-1:0] o_proc_rd ;
@@ -51,7 +52,7 @@ module shared_mem #(parameter PORT_COUNT = 4,
     .i_req    ( i_req_wr              ),
     .o_grant  ( o_grant_wr            )
     );
-    assign wr_en =  o_grant_wr[enc_wr] ; //|o_grant_wr;
+    assign wr_en   = i_wr_en    [enc_wr] ; //; (enable write only on posedge 
     assign wr_addr = i_proc_addr[enc_wr];
     assign wr_size = i_wr_size  [enc_wr];
     assign wr_data = i_proc_wr  [enc_wr];

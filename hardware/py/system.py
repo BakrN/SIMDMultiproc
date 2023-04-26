@@ -1,7 +1,7 @@
 # system  test 
 from typing import List, Union
 from model.mem import Mem  , MemHexSerializer
-from model.cmd import Command, gen_cmd_queue, CmdQueueSerializer , execute_cmd, Status , cmd_from_bin
+from model.cmd import Command, gen_add_cmd, gen_cmd_queue, CmdQueueSerializer , execute_cmd, Status , cmd_from_bin, gen_sub_cmd, CmdQueue
 from model.proc import Pool
 import random 
 
@@ -14,7 +14,15 @@ buffer = Mem(MEM_SIZE).randomize()
 mem_serializer = MemHexSerializer(buffer)
 mem_serializer.serialize("tests/shared_mem.txt")
 
-queue = gen_cmd_queue(CMD_COUNT,buffer)  
+#queue = gen_cmd_queue(CMD_COUNT,buffer)  
+queue = CmdQueue() 
+# create cmd 
+cmd0 = gen_add_cmd(1 , 0 , 100 ,100 , 0  ) 
+cmd1 = gen_add_cmd(2 , 200 , 400 ,100, 300  )  
+cmd2 = gen_sub_cmd(3 , 600 , 800 , 200 , 700  )
+queue.add_cmd(cmd0)
+queue.add_cmd(cmd1)
+queue.add_cmd(cmd2)
 
 serializer = CmdQueueSerializer(queue)# for teseting
 

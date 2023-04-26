@@ -14,7 +14,8 @@ module pool(
     o_busy    ,
     i_data   ,
     o_addr ,
-    o_data ,
+    o_data , 
+    o_wr_en , 
     o_wr_size
 );
 
@@ -31,6 +32,7 @@ output [`PROC_COUNT-1:0] o_req_rd     ;
 output [`PROC_COUNT-1:0] o_req_wr     ;
 output [`PROC_COUNT-1:0] o_finish  ;
 output [`PROC_COUNT-1:0] o_busy    ;
+output [`PROC_COUNT-1:0] o_wr_en    ;
 
 output logic [`BUS_W-1:0] o_data [`PROC_COUNT-1:0];
 output addr_t o_addr [`PROC_COUNT-1:0] ;
@@ -56,7 +58,8 @@ generate
     .o_req_wr          (    o_req_wr [i] ),
     .o_busy            (    o_busy   [i] ),
     .o_addr            (    o_addr[i] ), 
-    .o_wr_size         (    o_wr_size[i] ),
+    .o_wr_size         (    o_wr_size[i] ), 
+    .o_wr_en           (    o_wr_en[i] ),
     .o_data            (    o_data[i] )
 );
     end

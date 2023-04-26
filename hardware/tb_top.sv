@@ -1,7 +1,7 @@
 `include "top.sv"
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
-`define CMD_SIZE 10
+`define CMD_SIZE 3
 `endif
 module tb_top() ;
 parameter T = 10 ;
