@@ -132,6 +132,9 @@ class CmdQueue:
         while i < len(self.top_cmd):
             if self.top_cmd[i].data.writeback_addr <= cmd.writeback_addr + cmd.count -1  :   
                 self.top_cmd[i].data.dep_id = cmd.id 
+                if self.top_cmd[i].data.id == cmd.id: 
+                    self.top_cmd[i].data.id = max(1, (self.top_cmd[i].data.id + 1) % (MAX_ID+1) ) 
+
                 self.top_cmd[insert_index].add_child(self.top_cmd[i]) 
                 self.top_cmd.pop(i)  
             else : 
