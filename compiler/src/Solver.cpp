@@ -33,6 +33,11 @@ void Solver::ExecuteCmd( unit_t * mem ,const Command& cmd )  {
         mem[cmd.wrbackaddr]   = mem[cmd.operand0+1] * vec[0] + mem[cmd.operand0+2]*vec[1]; 
         mem[cmd.wrbackaddr+1] = mem[cmd.operand0]   * vec[0] + mem[cmd.operand0+1]*vec[1];
     } else { // MMul3x
+        unit_t vec[3] = {mem[cmd.operand1], mem[cmd.operand1+1], mem[cmd.operand1+2]};
+        mem[cmd.wrbackaddr]   = mem[cmd.operand0+2] * vec[0] + mem[cmd.operand0+3]*vec[1] + mem[cmd.operand0+4]*vec[2]; 
+        mem[cmd.wrbackaddr+1] = mem[cmd.operand0+1] * vec[0] + mem[cmd.operand0+2]*vec[1] + mem[cmd.operand0+3]*vec[2];
+        mem[cmd.wrbackaddr+2] = mem[cmd.operand0]   * vec[0] + mem[cmd.operand0+1]*vec[1] + mem[cmd.operand0+2]*vec[2];
+    
     } 
 } 
 void Solver::ExecuteCmds( unit_t * mem ,const std::vector<Command>& cmds ) { 

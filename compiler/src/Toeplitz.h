@@ -15,6 +15,7 @@ class Toep2d {
             // should be place contiguously in memory
             m_col  = std::make_unique<Vec1d>(buf, size-1) ;  
             m_row  = std::make_unique<Vec1d>(buf, size) ;   
+            
         }  
         Toep2d() : m_col(nullptr), m_row(nullptr) , m_size(0) {}; 
         Toep2d(BufferRef& ref, int mat_size) {

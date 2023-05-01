@@ -19,7 +19,10 @@ struct Command {
     // test bit 
     bool rtol; // right ot left
 } ; 
+
 std::ostream& operator<<(std::ostream& os , const Command& cmd ); 
+
+void CommandToBinary(char* buffer , Command& cmd) ;  
 
 // only commands generator on T's and vectors
 class DecomposerCommandGenerator{ 
@@ -37,10 +40,12 @@ class DecomposerCommandGenerator{
         std::vector<Command> m_vec_commands ;
         std::vector<Command> m_recomp_commands;  
 
-        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int>& enqueued , int dep_id , GEN_MODE mode ) ;  
+        void FindAndEnqueueUsers(Node* node, std::unordered_map<Node* , int>& enqueued , int cmd_id, int dep_id , GEN_MODE mode ) ;  
+        void FindAndEnqueueInputs(Node* node, std::unordered_map<Node* , int>& enqueued , int cmd_id, GEN_MODE mode ) ;  
         Node* m_root;   
 };
 
 // Generate hex file for hardware testing
-class CommandSerializer {
+class CommandSerializer { 
+    static void Serialize(std::vector<Command>& commands , std::string filename) ; 
 } ; 

@@ -21,10 +21,10 @@ class ProductNode : public Node {
         Node* m_vec ;
         Vec1d* m_result ;
 } ;     
-enum class Opcode_t {
-    ADD, 
-    SUB, 
-    MMUL_2x, // 2x2Mul 
+enum Opcode_t {
+    ADD=0, 
+    SUB=1, 
+    MMUL_2x=2, // 2x2Mul 
     MMUL_3x  // 3x3 Mul
 } ; 
 

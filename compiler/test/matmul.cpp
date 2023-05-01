@@ -68,7 +68,7 @@ bool compare_vec(unit_t* vec1, unit_t* vec2, int size) {
 int main() {   
 
     // works for 2x2 case 
-    int size = 512; 
+    int size = 16; 
     unit_t* toep = create_toep(size) ;
     unit_t* vec = create_vec(size) ;
     unit_t* result = new unit_t[size] ;
@@ -89,7 +89,7 @@ int main() {
         std::cout << result[i] << std::endl ;  
     } 
     Buffer toep_buf(10000);  
-    Buffer vec_buf(10000);  
+    Buffer vec_buf (10000);  
     Toep2d* toep_struct = new Toep2d(&toep_buf, size );
     //std::cout << " Toep row addr: " << toep_struct->GetRowRef().GetAddr() << std::endl;
     //std::cout << " Toep col addr: " << toep_struct->GetColRef().GetAddr() << std::endl;
@@ -105,28 +105,28 @@ int main() {
     unit_t* decomp_out = new unit_t[toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart()] ;    
     memcpy(decomp_out-toep_buf.GetStart(), toep, ((2*size)-1)*sizeof(unit_t)) ; // memory calls to dma
     memcpy(decomp_out+toep_buf.GetFree()-toep_buf.GetStart(), vec, size*sizeof(unit_t)) ; 
-    print_toep(decomp_out-toep_buf.GetStart() , size) ; 
+    print_toep(decomp_out-toep_buf.GetStart() ,size) ; 
     print_vec(decomp_out +toep_buf.GetFree()-toep_buf.GetStart(), size) ;   
 
-    //std::cout << "Printing toep commands" << std::endl;
-    //for (auto& cmd : command_generator.GetToepCommands()) { 
-    //    std::cout << cmd << std::endl ; 
-    //}
-    //std::cout << "Printing vec commands" << std::endl;
-    //for (auto& cmd : command_generator.GetVecCommands()) { 
-    //    std::cout << cmd << std::endl ; 
-    //}
-    //std::cout << "Printing recomp commands" << std::endl;
-    //for (auto& cmd : command_generator.GetRecompCommands()) { 
-    //    std::cout << cmd << std::endl ; 
-    //}
+    std::cout << "Printing toep commands" << std::endl;
+    for (auto& cmd : command_generator.GetToepCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
+    std::cout << "Printing vec commands" << std::endl;
+    for (auto& cmd : command_generator.GetVecCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
+    std::cout << "Printing recomp commands with size: " << command_generator.GetRecompCommands().size()<< std::endl;
+    for (auto& cmd : command_generator.GetRecompCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
     Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()  ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()   ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetRecompCommands()) ;
     int index = static_cast<Vec1d*>(node->GetValue())->GetRef().GetAddr() + toep_buf.GetFree() - toep_buf.GetStart() ; 
-    
-    //print_vec(decomp_out+index, size);
+    //
+    print_vec(decomp_out+index, size);
     compare_vec(result, decomp_out+index, size); 
-    
+    //std::cout << " Final Buffer Size: "  << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
     return 0 ; 
 } 
