@@ -1,6 +1,8 @@
 #pragma once 
 #include "Operator.h" 
 #include "Graph.h"
+#include <fstream> 
+#include <bitset> 
 
 // Recomp -> matmul -> vec -> toep
 enum class GEN_MODE{ 
@@ -46,6 +48,19 @@ class DecomposerCommandGenerator{
 };
 
 // Generate hex file for hardware testing
-class CommandSerializer { 
-    static void Serialize(std::vector<Command>& commands , std::string filename) ; 
+class Serializer { 
+    public: 
+        static void SerializeCommand(std::vector<Command>& commands , std::string filename , bool append=false) ; 
+        template <typename T> 
+        static void SerializeMem(T* mem ,  int count , std::string filename) { 
+            std::ofstream file (filename, std::ios::out) ; 
+
+            for (int i = 0 ; i < count ; i ++ ) {
+                std::bitset<32> val(mem[i]);
+                file.write(val.to_string().c_str(), val.to_string().length()) ;  
+                file.write("\n", 1) ; 
+            }
+            file.close() ; 
+        } ; 
+
 } ; 

@@ -98,5 +98,11 @@ shared_mem #(
     .o_grant_wr     ( mem_grant_wr   ),
     .o_proc_rd      ( mem_proc_rd    )
 );
+`ifdef DEBUG  
+    // collect information about each processor in pool 
+    always_ff @(posedge i_clk) begin 
+
+    end
+`endif 
 
 endmodule 

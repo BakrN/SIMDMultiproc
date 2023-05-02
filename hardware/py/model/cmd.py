@@ -46,7 +46,7 @@ class Command:
         opcode_bin = bin(self.opcode.value)[2:].zfill(2) # 2bits
         addr0_bin = bin(self.addr0)[2:].zfill(24)  # 24 bits
         addr1_bin = bin(self.addr1)[2:].zfill(24)  # 24 bits 
-        count_bin = bin(self.count)[2:].zfill(6)  # 6 bits
+        count_bin = bin(self.count)[2:].zfill(7)  # 7 bits
         writeback_addr_bin = bin(self.writeback_addr)[2:].zfill(24)  # 24 bits  
         packed_bin = f"{id_bin}{dep_id_bin}{opcode_bin}{addr0_bin}{addr1_bin}{count_bin}{writeback_addr_bin}" 
         return packed_bin
@@ -279,9 +279,13 @@ def gen_cmd_queue(count,mem : Mem , max_op_size = 100):
     for i in range(count) :  
         cmd_type = random.randint(0,2) 
         op_size = random.randint(1,max(2, max_op_size) )  
-        addr0 = random.randint(0,mem.count-2*op_size)
-        addr1 = random.randint(addr0+1,mem.count - op_size)   
-        writeback_addr = random.randint(0,mem.count - op_size)
+        addr0 = random.randint(0,mem.count) 
+        addr1 = random.randint(0,mem.count)     
+        writeback_addr = random.randint(0,mem.count)
+        addr0 = mem.count-op_size-10 if (addr0 +op_size> mem.count)  else addr0 
+        addr1 = mem.count-op_size-10 if (addr1 +op_size> mem.count)  else addr1 
+        writeback_addr = mem.count-op_size-10 if (writeback_addr+op_size> mem.count)  else writeback_addr
+
         if cmd_type == 0 :
             cmd = gen_add_cmd(i+1 , addr0, addr1, op_size, writeback_addr)
         else : 
@@ -290,11 +294,15 @@ def gen_cmd_queue(count,mem : Mem , max_op_size = 100):
     return queue
 
 def execute_cmd (cmd : Command , mem : Mem): 
+    print (len(mem.data))
     if cmd.opcode == Opcode.ADD :
         for i in range(cmd.count):
+            print("executinng add on addr0: " + str(cmd.addr0 + i) + " addr1: " + str(cmd.addr1 + i) + " writeback: " + str(cmd.writeback_addr + i))
             mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] + mem.data[cmd.addr1 + i]
     elif cmd.opcode == Opcode.SUB :
         for i in range(cmd.count):
+            print("executinng sub on addr0: " + str(cmd.addr0 + i) + " addr1: " + str(cmd.addr1 + i) + " writeback: " + str(cmd.writeback_addr + i))
             mem.data[cmd.writeback_addr + i] = mem.data[cmd.addr0 + i] - mem.data[cmd.addr1 + i]
+
     cmd.status = Status.DONE
     return mem

@@ -57,7 +57,8 @@ localparam CMD_WRITEBACK = 4'd9 ; // (put dependent cmd in fifo)
 
 // PROC_FINISH
 
-localparam PROC_FINISH = 4'd10 ; // Flush cmd from enq_cmd map 
+localparam FIND_PROC   = 4'd10 ; 
+localparam PROC_FINISH = 4'd11 ; // Flush cmd from enq_cmd map 
  
 logic [3:0] state ; 
 logic cycle_delay; 
@@ -90,7 +91,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 if(|i_finish_proc) begin  
                     // flush id  
                     // map_flush <= 1 ; 
-                    state <= PROC_FINISH; 
+                    state <= FIND_PROC; 
                     finish_bit_pos <= finished_proc; 
                     cmd_source <= 1 ; // check fifo
                     cam_matched_addr <= cam_match_addr ;
@@ -113,19 +114,24 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end  
             end
             end
+            FIND_PROC: begin 
+            if (cycle_delay) begin 
+                cycle_delay <= 0 ;
+            end else begin 
+                $display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
+                cam_matched_addr <= cam_match_addr ;
+                $display ("PROC_FINISH :FOUND MATCH AT %h", cam_match_addr);
+                state <= PROC_FINISH; 
+                cycle_delay <= 1 ; 
+            end
+
+            end
             PROC_FINISH: begin  // wait for cam entry to be deleted  (cam writes/delets takes a lot of time) 
-                if (proc_finish_delay==0) begin 
-                   proc_finish_delay <= 1 ; 
-                end else if(cycle_delay) begin 
+                if(cycle_delay) begin 
                     cycle_delay <=  0 ; 
                     cam_matched_addr <= cam_match_addr ; 
-                    $display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
                 end else begin 
-                    $display("PROC_FINISH :FOUND MATCH AT %h", cam_matched_addr);
-                    if (proc_finish_delay ==1 ) begin 
-                        proc_finish_delay <= 2; 
-                    end
-                    else if (!cam_write_busy) begin 
+                    if (!cam_write_busy) begin 
                         cam_counter <= cam_counter -1 ; 
                     $display ("finished command %b", finish_bit_pos); 
                         state <= IDLE;   
@@ -346,7 +352,7 @@ logic  [DATA_WIDTH-1:0]  cam_compare_data;
 logic  cam_write_busy;
 logic  [2**ADDR_WIDTH-1:0]  cam_match_many;
 logic  [2**ADDR_WIDTH-1:0]  cam_match_single;
-logic  [ADDR_WIDTH-1:0]  cam_match_addr;
+logic  [ADDR_WIDTH-1:0]     cam_match_addr;
 logic cam_match;
 logic [1:0]  select_mask ; 
 logic cam_setup; // cam finished setting up (don't start unless it is) 
@@ -360,7 +366,7 @@ assign cam_write_addr   = ( state==PROC_FINISH) ? cam_matched_addr : ((cmd_sourc
 
 assign cam_write_data   = {next_cmd.id , selected_proc} ;
 assign cam_write_enable = (((state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source)) )&&cycle_delay) || cam_write_delete) ? 1 : 0 ;  
-assign cam_write_delete = (state==PROC_FINISH && !cycle_delay && proc_finish_delay==1) ? 1 : 0;  
+assign cam_write_delete = (state==PROC_FINISH && cycle_delay) ? 1 : 0;  
 
 assign select_mask = (state == CMD_CHECK || state==CAM_WRITE)  ? 2'b10 : 2'b01; // * search for proc id when it's finished, otherwise just look at cmd_id 
 // Enable write in 2 cases 
@@ -426,7 +432,7 @@ end
 /* --------- Valid Generation of next free cam entry  (cam_nxt_addr) -------- */
 logic [`MAX_CMDS-1:0] valid_entries;  
 logic fill_entry , del_entry; 
-assign del_entry = (state==PROC_FINISH && cycle_delay && proc_finish_delay ==1) ? 1 : 0 ; 
+assign del_entry = (state==PROC_FINISH && cycle_delay ) ? 1 : 0 ; 
 logic free_entry;   
 assign free_entry = ~valid_entries[cam_nxt_addr] ; 
 assign fill_entry = (state==CAM_WRITE && cycle_delay) ? 1 : 0 ; 

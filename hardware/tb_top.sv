@@ -1,7 +1,8 @@
 `include "top.sv"
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
-`define CMD_SIZE 100
+`define CMD_SIZE 4551 // 64matvec cmd
+`define MEM_MIN  8965 // 64matvec cmd
 `endif
 module tb_top() ;
 parameter T = 10 ;
@@ -53,19 +54,22 @@ end
 int mem_file, init_mem_file  ;
 initial begin
     // Load initial mem 
-    $readmemh("py/tests/shared_mem.txt",u_top.u_shared_mem.u_mem.r_mem);
+    $readmemb("sim/init_mem.txt",u_top.u_shared_mem.u_mem.r_mem); 
+    for (int i = `MEM_MIN ; i < `MEM_SIZE; i++) begin
+        u_top.u_shared_mem.u_mem.r_mem[i] = 0;
+    end
     init_mem_file = $fopen("py/tests/init_sim_mem.txt", "w");
-    for (int i = 0 ; i < `MEM_SIZE; i++) begin
-        $fdisplay(init_mem_file,"%h",u_top.u_shared_mem.u_mem.r_mem[i]);
+    for (int i = 0 ; i < `MEM_MIN; i++) begin
+        $fdisplay(init_mem_file,"%b",u_top.u_shared_mem.u_mem.r_mem[i]);
     end
     $fclose(init_mem_file);
 
     $display("shared mem loaded");
-    $readmemb("py/tests/cmd_queue.txt",u_cmd_queue.memory);
+    //$readmemb("py/tests/cmd_queue.txt",u_cmd_queue.memory);
+    $readmemb("sim/cmd_queue.txt",u_cmd_queue.memory);
     u_cmd_queue.readPtr =  0;
     u_cmd_queue.writePtr = `CMD_SIZE ;
     u_cmd_queue.o_count = `CMD_SIZE;
-    $display("cmd queue loaded, cmd bits: %d", $bits(cmd_t));
     
     // reset 
     i_rstn = 0 ;
@@ -85,8 +89,8 @@ initial begin
         #T ;
     end
     mem_file = $fopen("py/tests/sim_mem.txt", "w");
-    for (int i = 0 ; i < `MEM_SIZE; i++) begin
-        $fdisplay(mem_file,"%h",u_top.u_shared_mem.u_mem.r_mem[i]);
+    for (int i = 0 ; i < `MEM_MIN; i++) begin
+        $fdisplay(mem_file,"%b",u_top.u_shared_mem.u_mem.r_mem[i]);
     end
     $fclose(mem_file);
     $finish ; 

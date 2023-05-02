@@ -63,12 +63,16 @@ bool compare_vec(unit_t* vec1, unit_t* vec2, int size) {
     return true ; 
 }
 
+#define MEM_LENGTH 131072
 
-
-int main() {   
-
+int main(int argc, char** argv) {   
+    // take size as input in argv 
+    if (argc != 2) { 
+        std::cout << "Usage: ./matmul <size>" << std::endl ; 
+        return 0 ; 
+    }
+    int size = atoi(argv[1]) ;
     // works for 2x2 case 
-    int size = 16; 
     unit_t* toep = create_toep(size) ;
     unit_t* vec = create_vec(size) ;
     unit_t* result = new unit_t[size] ;
@@ -91,8 +95,6 @@ int main() {
     Buffer toep_buf(10000);  
     Buffer vec_buf (10000);  
     Toep2d* toep_struct = new Toep2d(&toep_buf, size );
-    //std::cout << " Toep row addr: " << toep_struct->GetRowRef().GetAddr() << std::endl;
-    //std::cout << " Toep col addr: " << toep_struct->GetColRef().GetAddr() << std::endl;
     Vec1d*  vec_struct = new Vec1d(&vec_buf,    size) ;  
     DataNode* toep_node = new DataNode(toep_struct);
     DataNode* vec_node = new DataNode(vec_struct);
@@ -102,9 +104,10 @@ int main() {
     DecomposerCommandGenerator command_generator(graph->GetRoot()); 
     //toep_graph->PrintGraph() ;
     command_generator.Generate() ; 
-    unit_t* decomp_out = new unit_t[toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart()] ;    
+    unit_t* decomp_out = new unit_t[toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart()] ;     
     memcpy(decomp_out-toep_buf.GetStart(), toep, ((2*size)-1)*sizeof(unit_t)) ; // memory calls to dma
     memcpy(decomp_out+toep_buf.GetFree()-toep_buf.GetStart(), vec, size*sizeof(unit_t)) ; 
+    Serializer::SerializeMem(decomp_out, toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart(), "../../hardware/sim/init_mem.txt") ;
     print_toep(decomp_out-toep_buf.GetStart() ,size) ; 
     print_vec(decomp_out +toep_buf.GetFree()-toep_buf.GetStart(), size) ;   
 
@@ -112,14 +115,14 @@ int main() {
     for (auto& cmd : command_generator.GetToepCommands()) { 
         std::cout << cmd << std::endl ; 
     }
-    std::cout << "Printing vec commands" << std::endl;
-    for (auto& cmd : command_generator.GetVecCommands()) { 
-        std::cout << cmd << std::endl ; 
-    }
-    std::cout << "Printing recomp commands with size: " << command_generator.GetRecompCommands().size()<< std::endl;
-    for (auto& cmd : command_generator.GetRecompCommands()) { 
-        std::cout << cmd << std::endl ; 
-    }
+    //std::cout << "Printing vec commands" << std::endl;
+    //for (auto& cmd : command_generator.GetVecCommands()) { 
+    //    std::cout << cmd << std::endl ; 
+    //}
+    //std::cout << "Printing recomp commands with size: " << command_generator.GetRecompCommands().size()<< std::endl;
+    //for (auto& cmd : command_generator.GetRecompCommands()) { 
+    //    std::cout << cmd << std::endl ; 
+    //}
     Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()  ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()   ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetRecompCommands()) ;
@@ -128,5 +131,14 @@ int main() {
     print_vec(decomp_out+index, size);
     compare_vec(result, decomp_out+index, size); 
     //std::cout << " Final Buffer Size: "  << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    //
+    Serializer::SerializeCommand(command_generator.GetToepCommands() ,"../../hardware/sim/cmd_queue.txt") ; 
+    Serializer::SerializeCommand(command_generator.GetVecCommands() ,"../../hardware/sim/cmd_queue.txt", true) ;
+    Serializer::SerializeCommand(command_generator.GetRecompCommands() ,"../../hardware/sim/cmd_queue.txt", true) ;
+    std::cout << "finished writing: " << command_generator.GetRecompCommands().size()+ command_generator.GetToepCommands().size()+command_generator.GetVecCommands().size()<< " commands" << std::endl ;
+    Serializer::SerializeMem(decomp_out, toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart(), "../../hardware/sim/valid_mem.txt") ;
+    std::cout << "Finished writing mem with size: " << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    //std::cout << " Finished writing mem: 
+    std::cout << " Final Buffer Size: "  << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
     return 0 ; 
 } 

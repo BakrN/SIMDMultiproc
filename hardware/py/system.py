@@ -7,7 +7,7 @@ import random
 
 MEM_SIZE = 1024 
 PROC_COUNT = 4
-CMD_COUNT = 100
+CMD_COUNT = 4
 
 
 buffer = Mem(MEM_SIZE).randomize()    
@@ -16,7 +16,7 @@ mem_serializer.serialize("tests/shared_mem.txt")
 
 #queue = gen_cmd_queue(CMD_COUNT,buffer)  
 queue = CmdQueue() 
-queue = gen_cmd_queue(CMD_COUNT,buffer, 35)
+queue = gen_cmd_queue(CMD_COUNT,buffer, 127)
 # create cmd 
 #cmd0 = gen_add_cmd(1 , 0  , 100 , 20 , 20) 
 #cmd1 = gen_sub_cmd(2 , 30 , 400 , 35 , 300  ,1 )  # depends on cmd0

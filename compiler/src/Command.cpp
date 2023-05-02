@@ -4,8 +4,8 @@
 #include "config.h" 
 #include <unordered_map>
 #include <math.h> 
-#include <bitset> 
-#include <fstream> 
+
+
 static int CMD_ID = 1 ; 
 
 static int toep_offset = 0 ; 
@@ -276,8 +276,8 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
                 } 
                 Vec1d* vec = static_cast<Vec1d*>(node->GetValue()) ;
                 if (level < (int)vec->Size()) { 
+                    dep_id = (level==-1) ? 0 : CMD_ID ; 
                     level = (int)vec->Size() ; 
-                    dep_id = CMD_ID ; 
                     CMD_ID = std::max(1, (CMD_ID+1)%(1 << ID_BITS)) ; 
                 }
                 //FindAndEnqueueUsers(node , enqueued ,CMD_ID, 0 ,  GEN_MODE::RECOMPOSE) ;
@@ -310,8 +310,17 @@ std::vector<Command>& DecomposerCommandGenerator::GetRecompCommands(){
     return m_recomp_commands;
 } 
 
-void CommandSerializer::Serialize(std::vector<Command>& commands, std::string filename) { 
-    std::ofstream file(filename, std::ios::out | std::ios::binary);
+void Serializer::SerializeCommand(std::vector<Command>& commands, std::string filename, bool append) { 
+    std::ios_base::openmode mode; 
+    
+    if (append) {  
+       mode = std::ios::out | std::ios::app ; 
+    } else { 
+       mode = std::ios::out; 
+    } 
+
+
+    std::ofstream file(filename, mode);
     if (!file.is_open()) {
         std::cout << "Error opening file " << filename << std::endl;
         return;
@@ -326,8 +335,8 @@ void CommandSerializer::Serialize(std::vector<Command>& commands, std::string fi
         std::bitset<COUNT_BITS> count(cmd.count);
         std::bitset<OPCODE_BITS> opcode(cmd.operation); 
         std::string cmd_str = id.to_string() + dep.to_string() +opcode.to_string()+ operand0.to_string() + operand1.to_string() +  count.to_string() + wrbackaddr.to_string()  ;
-        std::bitset<CMD_BITS> cmd_bitset(cmd_str);
-        file.write(reinterpret_cast<char*>(&cmd_bitset), sizeof(cmd_bitset));
+        file.write(cmd_str.c_str(), cmd_str.length());
+        file.write("\n", 1);
     }
     file.close();
 }
