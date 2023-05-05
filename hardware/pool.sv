@@ -16,7 +16,10 @@ module pool(
     o_addr ,
     o_data , 
     o_wr_en , 
-    o_wr_size
+    o_wr_size 
+    `ifdef DEBUG
+    , o_states
+    `endif
 );
 
 input instr_t i_instr   ;
@@ -40,7 +43,9 @@ output logic [2:0] o_wr_size [`PROC_COUNT-1:0] ;
 
 logic [`BUS_W-1:0] test_out ;
 logic [2:0] test_wr  ;
-
+`ifdef DEBUG
+    output logic [`PROC_COUNT-1:0][3:0] o_states  ; 
+`endif
 //
 generate
  for (genvar i = 0 ; i < `PROC_COUNT ; i++)  begin 
@@ -60,7 +65,10 @@ generate
     .o_addr            (    o_addr[i] ), 
     .o_wr_size         (    o_wr_size[i] ), 
     .o_wr_en           (    o_wr_en[i] ),
-    .o_data            (    o_data[i] )
+    .o_data            (    o_data[i] ) 
+    `ifdef DEBUG 
+        , .o_state( o_states[i] )
+    `endif 
 );
     end
 endgenerate

@@ -60,9 +60,32 @@ module cam #(
     output wire setup 
 );
 
+
 generate
-    if (CAM_STYLE == "SRL") begin
-        cam_srl #(
+    //if (CAM_STYLE == "SRL") begin
+    //    cam_srl #(
+    //        .DATA_WIDTH(DATA_WIDTH),
+    //        .ADDR_WIDTH(ADDR_WIDTH),
+    //        .SLICE_WIDTH(SLICE_WIDTH)
+    //    )
+    //    cam_inst (
+    //        .clk(clk),
+    //        .rst(rst),
+    //        .write_addr(write_addr),
+    //        .write_data(write_data),
+    //        .write_delete(write_delete),
+    //        .write_enable(write_enable),
+    //        .write_busy(write_busy),
+    //        .compare_data(compare_data),
+    //        .match_many(match_many),
+    //        .match_single(match_single),
+    //        .match_addr(match_addr),
+    //        .match(match), 
+    //        .select_mask(select_mask),
+    //        .setup(setup)
+    //    );
+    //end else if (CAM_STYLE == "BRAM") begin
+        cam_bram #(
             .DATA_WIDTH(DATA_WIDTH),
             .ADDR_WIDTH(ADDR_WIDTH),
             .SLICE_WIDTH(SLICE_WIDTH)
@@ -74,16 +97,17 @@ generate
             .write_data(write_data),
             .write_delete(write_delete),
             .write_enable(write_enable),
-            .write_busy(write_busy), 
-            .select_mask(select_mask), 
+            .write_busy(write_busy),
             .compare_data(compare_data),
             .match_many(match_many),
             .match_single(match_single),
             .match_addr(match_addr),
             .match(match), 
-            .setup(setup)
+            .select_mask(select_mask),
+            .setup(setup) 
         );
-    end
+    //end
 endgenerate
+
 
 endmodule

@@ -126,7 +126,7 @@ Node* FindOpRoot(Node* node, std::unordered_map<Node*, int>& enqueued) {
 }   
 void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered_map<Node* , int>& enqueued, int cmd_id , int dep_id, GEN_MODE mode) { 
     if (cmd_id == dep_id) { 
-        cmd_id = std::max( (dep_id+1) % ID_BITS, 1) ;
+        cmd_id = std::max( (dep_id+1) % ID_BITS, MIN_CMD_ID) ;
     } 
     if (mode == GEN_MODE::TOEP) { 
         AddCommands(m_toep_commands,static_cast<OpNode*>(node), cmd_id, dep_id); 
@@ -137,7 +137,7 @@ void DecomposerCommandGenerator::FindAndEnqueueUsers(Node* node , std::unordered
     }
     enqueued[node] = cmd_id; 
     int ID = cmd_id;  
-    CMD_ID = std::max((cmd_id+1) % (1 << ID_BITS),1);  
+    CMD_ID = std::max((cmd_id+1) % (1 << ID_BITS),MIN_CMD_ID);  
     std::queue<Node*> dep_cmds; 
     std::queue<Node*> search_nodes;  
     search_nodes.push(node) ;
@@ -264,7 +264,7 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
     }
     //////// recomposition  
     int level = -1 ; 
-    int dep_id = 0 ; 
+    int dep_id = 1 ; 
     if (recomp) {
         enqueued.clear(); 
         for ( auto it = recomp_graph->rbegin() ; it != recomp_graph->rend() ; ++it) { 
@@ -278,7 +278,7 @@ void DecomposerCommandGenerator::Generate(bool toep, bool vec, bool recomp) {
                 if (level < (int)vec->Size()) { 
                     dep_id = (level==-1) ? 0 : CMD_ID ; 
                     level = (int)vec->Size() ; 
-                    CMD_ID = std::max(1, (CMD_ID+1)%(1 << ID_BITS)) ; 
+                    CMD_ID = std::max(MIN_CMD_ID, (CMD_ID+1)%(1 << ID_BITS)) ; 
                 }
                 //FindAndEnqueueUsers(node , enqueued ,CMD_ID, 0 ,  GEN_MODE::RECOMPOSE) ;
                 AddCommands(m_recomp_commands,static_cast<OpNode*>(node), CMD_ID, dep_id); 

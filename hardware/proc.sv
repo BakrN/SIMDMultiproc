@@ -31,7 +31,10 @@ module proc(
     o_data   ,  
     o_wr_size , 
     o_wr_en , 
-    o_busy 
+    o_busy  
+    `ifdef DEBUG 
+        , o_state
+    `endif
 ); 
 /* ---------------------------- Local Parameters ---------------------------- */
     // FSM setup 
@@ -62,7 +65,10 @@ module proc(
     output logic[2:0] o_wr_size;
     output logic [`BUS_W-1:0]  o_data;
     output o_wr_en ;
-
+    `ifdef DEBUG 
+        output [3:0] o_state; 
+        assign o_state = state;
+    `endif
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
 logic [3:0] state ;   

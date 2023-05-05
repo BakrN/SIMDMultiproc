@@ -50,7 +50,9 @@ wire [$bits(addr_t)-1:0]pool_addr [`PROC_COUNT-1:0];
 wire[2:0] pool_wr_size [`PROC_COUNT-1:0];
 
 
-
+`ifdef DEBUG 
+logic [`PROC_COUNT-1:0][3:0] states; 
+`endif
 
 
 pool  u_pool (
@@ -69,7 +71,10 @@ pool  u_pool (
     .o_data             (     pool_data         ),
     .o_addr             (     pool_addr         ),
     .o_wr_en            (     pool_wr_en        ),
-    .o_wr_size          (     pool_wr_size      )
+    .o_wr_size          (     pool_wr_size      ) 
+    `ifdef DEBUG
+    , .o_states            (     states           )
+    `endif
     
 );
 
@@ -98,11 +103,41 @@ shared_mem #(
     .o_grant_wr     ( mem_grant_wr   ),
     .o_proc_rd      ( mem_proc_rd    )
 );
-`ifdef DEBUG  
+`ifdef DEBUG
     // collect information about each processor in pool 
-    always_ff @(posedge i_clk) begin 
-
+    int state_s[`PROC_COUNT-1:0][8:0];
+    int cycle_count ;
+    always_ff @(posedge i_clk or negedge i_rstn) begin 
+        if (!i_rstn) begin 
+            for (int i = 0 ; i < `PROC_COUNT; i++) begin
+                for (int j = 0 ; j < 9 ; j++) begin 
+                    state_s[i][j] = 0 ; 
+                end
+            end
+            cycle_count = 0 ; 
+        end
+        else if (finished_task && queue_empty) begin 
+            $display("Total cycles: %0d", cycle_count);
+            for (int i = 0  ; i < `PROC_COUNT ; i++) begin 
+                // print out the statistics collected by each processor
+                $display("Processor %d: ", i);
+                $display("  Idle: %0.2f%", state_s[i][0]*100/cycle_count);
+                $display("  ld1:  %0.2f%", state_s[i][1]*100/cycle_count);
+                $display("  ld2:  %0.2f%", state_s[i][2]*100/cycle_count);
+                $display("  set_info: %0.2f", state_s[i][3]*100/cycle_count);
+                $display("  store: %0.2f", state_s[i][4]*100/cycle_count);
+                $display("  Fetch1: %0.2f", state_s[i][5]*100/cycle_count);
+                $display("  Fetch2: %0.2f", state_s[i][6]*100/cycle_count);
+                $display("  Write: %0.2f", state_s[i][7]*100/cycle_count);
+                $display("  Finished: %0.2f", state_s[i][8]*100/cycle_count);
+            end
+        end else begin 
+            for (int index =  0; index < `PROC_COUNT ; index++) begin 
+                state_s[index][states[index]] = state_s[index][states[index]]+1;  
+            end
+            cycle_count++ ;
+        end
     end
-`endif 
+`endif
 
 endmodule 

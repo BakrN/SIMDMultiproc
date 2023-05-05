@@ -6,4 +6,4 @@
 #define OPCODE_BITS 2  // add sub mul2x mul3x 
 #define ID_BITS 4 
 #define CMD_BITS  89 
-
+#define MIN_CMD_ID 1

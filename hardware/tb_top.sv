@@ -1,8 +1,12 @@
 `include "top.sv"
+// run scale: 
+// iverilog -g2012 -DDEBUG -o sim/tb_top.vvp tb_top.sv cam/*.v -DCMD_SIZE=224119  -DMEM_MIN=251783 -DMEM_SIZE=262144 && vvp sim/tb_top.vvp
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
-`define CMD_SIZE 4551 // 64matvec cmd
-`define MEM_MIN  8965 // 64matvec cmd
+`define CMD_SIZE 16395 // 64matvec cmd
+`endif
+`ifndef MEM_MIN 
+`define MEM_MIN  27407// 64matvec cmd
 `endif
 module tb_top() ;
 parameter T = 10 ;
@@ -77,9 +81,13 @@ initial begin
     i_rstn = 1 ;
     #T ;
     $display("is queue empty? %d", queue_empty);
+
+    //#(200*T);
+    //$finish;
+
     while (!queue_empty) begin
         if(issuer_rd_queue) begin
-            $display("cmd: %b", nxt_cmd);
+            //$display("cmd: %b", nxt_cmd);
         end
         #T ; 
     end
@@ -91,8 +99,10 @@ initial begin
     mem_file = $fopen("py/tests/sim_mem.txt", "w");
     for (int i = 0 ; i < `MEM_MIN; i++) begin
         $fdisplay(mem_file,"%b",u_top.u_shared_mem.u_mem.r_mem[i]);
-    end
+    end 
+
     $fclose(mem_file);
+    #(T); 
     $finish ; 
 end
 endmodule

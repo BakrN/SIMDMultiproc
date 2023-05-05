@@ -7,7 +7,9 @@
 `define MAX_CMDS `PROC_COUNT*2 // Maximum amount of commands that could be stored in CAM 
 `define USIZE 32 
 `define BUS_W 160
-`define MEM_SIZE 10000 // 128 cmd
+`ifndef MEM_SIZE
+`define MEM_SIZE 30000 // 128 cmd
+`endif
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
 typedef logic[3:0] cmd_id_t; 

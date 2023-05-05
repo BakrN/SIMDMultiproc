@@ -37,10 +37,12 @@ output logic o_rd_queue ;
 output o_finished_task; 
 // State machine 
 // cam Parameters
-localparam DATA_WIDTH   = ($bits(cmd_id_t) + $clog2(`PROC_COUNT) ) ;
+//
+localparam DATA_WIDTH   = 8 ; // ($ceil((($bits(cmd_id_t) + $clog2(`PROC_COUNT)) / SLICE_WIDTH)) * SLICE_WIDTH);
 localparam ADDR_WIDTH   = $clog2(`MAX_CMDS) ; 
-localparam CAM_STYLE    = "SRL";
-localparam SLICE_WIDTH  = $bits(cmd_id_t)    ; // only 2 slices 
+localparam PADDING_SIZE = 2 ;//DATA_WIDTH - ($bits(cmd_id_t) + $clog2(`PROC_COUNT)) ;
+localparam CAM_STYLE    = "BRAM";
+localparam SLICE_WIDTH  = 4;//$bits(cmd_id_t)    ; // only 2 slices 
  
 // setup simd array  
 localparam IDLE        = 4'd0 ;
@@ -59,6 +61,8 @@ localparam CMD_WRITEBACK = 4'd9 ; // (put dependent cmd in fifo)
 
 localparam FIND_PROC   = 4'd10 ; 
 localparam PROC_FINISH = 4'd11 ; // Flush cmd from enq_cmd map 
+localparam SEND_ACK = 4'd12 ; // wait for proc to free up 
+
  
 logic [3:0] state ; 
 logic cycle_delay; 
@@ -67,6 +71,7 @@ cmd_info_t next_cmd_info ;
 cmd_id_t current_cmd_id ,current_dep_id; 
 logic cmd_source; // 0: queue , 1:fifo
 logic [1:0] proc_finish_delay; 
+logic cam_write_en_reg ; 
 assign next_cmd = {current_cmd_id, current_dep_id, next_cmd_info}; 
 
 // Current state update logic 
@@ -77,12 +82,13 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
         cam_nxt_addr <= 0 ;
         cmd_source<= 0 ; 
         cycle_delay <= 0 ; 
-        proc_finish_delay <= 0 ;
+        cam_write_en_reg <= 0 ;
+        finish_bit_pos <= 0 ;
     end 
     else begin  
         case (state)  
             IDLE: begin  
-                if (cam_setup) begin 
+                if (cam_setup ) begin 
                     state <= IDLE ; 
                 end else begin 
                 cycle_delay <= 0 ; 
@@ -94,7 +100,6 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     state <= FIND_PROC; 
                     finish_bit_pos <= finished_proc; 
                     cmd_source <= 1 ; // check fifo
-                    cam_matched_addr <= cam_match_addr ;
                     cycle_delay <= 1; 
                 end
                 
@@ -107,7 +112,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                         cmd_source =1 ; 
                     end
 
-                    if (((!dep_fifo_empty ) && cmd_source) || !i_empty_queue) begin 
+                    if ((((!dep_fifo_empty ) && cmd_source) || !i_empty_queue)&& cam_counter <`MAX_CMDS) begin 
                         state <=  CMD_GET;  
                     end
                     
@@ -118,28 +123,40 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             if (cycle_delay) begin 
                 cycle_delay <= 0 ;
             end else begin 
-                $display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
+                $display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
+                if (!cam_match) begin 
+                    
+                    for (int i = 0 ; i < 2 ; i++) begin 
+                        $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
+                    end
+                    $display(" TRYING TO DELETE PROC THAT DOESN'T EXIST");
+                    $finish; 
+                end
                 cam_matched_addr <= cam_match_addr ;
                 $display ("PROC_FINISH :FOUND MATCH AT %h", cam_match_addr);
                 state <= PROC_FINISH; 
-                cycle_delay <= 1 ; 
+                cam_write_en_reg <= 1 ; 
             end
 
             end
             PROC_FINISH: begin  // wait for cam entry to be deleted  (cam writes/delets takes a lot of time) 
-                if(cycle_delay) begin 
-                    cycle_delay <=  0 ; 
-                    cam_matched_addr <= cam_match_addr ; 
-                end else begin 
-                    if (!cam_write_busy) begin 
+                    if (cam_write_en_reg) begin 
+                        cam_write_en_reg <= 0 ; 
+                    end else begin 
+                        if (!cam_write_busy) begin 
                         cam_counter <= cam_counter -1 ; 
-                    $display ("finished command %b", finish_bit_pos); 
-                        state <= IDLE;   
-                    end   
+                        $display ("finished command %b", finish_bit_pos); 
+                        state <= SEND_ACK ;
+                    end    else begin 
+                        $display ("PROC_FINISH: Waiting for cam to write");
+                    end
+                    end
 
-                end
 
             end 
+            SEND_ACK: begin 
+                state <= IDLE ;
+            end
             CMD_GET: begin 
                 if (cmd_source) begin// fifo
                     $display("Getting command from fifo with id: %d and dep_id: %d, with data: %d , and addr : %d", dep_dout.id, dep_dout.dep, buf_dout, dep_dout.entry_idx);
@@ -150,7 +167,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end else begin 
                     $display("Getting new command from outside queue with data", i_cmd);
                     {current_cmd_id , current_dep_id ,next_cmd_info} <= i_cmd; 
-                    //$display("Input command : %b", i_cmd);
+                    $display("Input command : %b", i_cmd);
                 end
                 state <= CMD_CHECK;
                 cycle_delay <= 1; 
@@ -162,64 +179,71 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end else begin  
                    
                 $display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
-                $display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
-                $display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h", cam_compare_data, cam_match, cam_match_addr) ; 
+                //$display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
+                $display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h",u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
+                for (int i = 0 ; i < 2 ; i++) begin 
+                    $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
+                end
                 cam_matched <= cam_match ; 
                 cam_matched_addr <= cam_match_addr ; 
-                state <= CAM_WRITE ; 
+
+
                 selected_proc <= free_proc;
                 cycle_delay <= 1 ;  
-                cam_free_addr <= cam_nxt_addr; 
+                if (free_entry) begin 
+                    cam_free_addr <= cam_nxt_addr; 
+                    if (cmd_source && cam_match) begin 
+                        state <= CMD_WRITEBACK;  
+                        $display ("CMD still needs command to be executed. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ; 
+                    end else begin 
+                        cam_write_en_reg <= 1 ;
+                        state <= CAM_WRITE ;  
+                    end
+                end else begin 
+                    
+                    $display ("No free entry in cam. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ;
+
+                    //$finish; 
+                    state <= CMD_CHECK; 
                 end
             end
+            end
             CAM_WRITE : begin  // adds new entry to cam if no match (source0) if source is 1 and no match then we overwrite the entry 
-                if (cycle_delay) begin 
-                    cycle_delay <= 0; 
+                if (cam_write_en_reg) begin 
+                    cam_write_en_reg <= 0 ;
                 end 
                 else begin  
                 if (cmd_source) begin  
-                    if (cam_matched) begin 
-                        state <= CMD_WRITEBACK;  
-                        $display ("CMD still needs command to be executed. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ; 
-                        //$finish; 
-                    end else  begin 
-                        $display ("Dependency of command finished executing. CMD id: %d , written to %d", next_cmd.id , dep_store_idx) ; 
-                        // wait for overwrite 
-                        //$finish;
-                        if (!cam_write_busy) begin 
-                            //$finish; 
-                            state <= SIMD_SELECT; 
-                        end
-
-                        
-
-                    end 
+                    $display ("Dependency of command finished executing. CMD id: %d , written to %d", next_cmd.id , dep_store_idx) ; 
+                    // wait for overwrite 
+                    //$finish;
+                    if (!cam_write_busy) begin 
+                      //$finish; 
+                      state <= SIMD_SELECT; 
+                    end
 
                 end else begin  // first time seeing command
                     if (!cam_write_busy) begin 
-
                         if(cam_matched) begin 
                             $display("Command will be written back to FIFO (dependency) , CMD id: %d , Waiting on command id: %d", next_cmd.id , next_cmd.dep);
                             state <= CMD_WRITEBACK; 
                             dep_store_idx <= cam_free_addr;
                         end else begin
-                         $display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
-
+                            $display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
                             state <= SIMD_SELECT; 
                         end
-                            cam_counter <= cam_counter + 1;  
+                        cam_counter <= cam_counter + 1;  
                     end
-                        
                 end
-            end
+                end
             end
             CMD_WRITEBACK: begin // writeback to fifo
                 state <= IDLE; 
-                //$display ("Writing back to FIFO, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ;
+                $display ("Writing back to FIFO, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ;
             end
             
             SIMD_SELECT: begin  
-                //$display ("enable signal %b", o_en_proc ) ; 
+                $display ("enable signal %b", o_en_proc ) ; 
                 // DELETE BELOW
                 if (cmd_source) begin 
                     $display("came from FIFO: Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
@@ -357,30 +381,52 @@ logic cam_match;
 logic [1:0]  select_mask ; 
 logic cam_setup; // cam finished setting up (don't start unless it is) 
 // Cam Assignments 
+always_comb begin 
 
-assign cam_compare_data = (state==CMD_CHECK) ? {next_cmd.dep, {$clog2(`PROC_COUNT){1'b0}}}: ((state==CAM_WRITE)?{next_cmd.id, {$clog2(`PROC_COUNT){1'b0}}} : {{$bits(cmd_id_t){1'b0}}, finish_bit_pos} ); // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this 
+    if($bits(cmd_id_t) > $clog2(`PROC_COUNT)) begin
+        cam_compare_data = {next_cmd.dep , {PADDING_SIZE{1'b0}}, finish_bit_pos} ;
+        // if there was a match. 
+        if (cam_matched) begin 
+            // write a proc id that doesn't exist 
+            //localparam [3:0] width = `PROC_COUNT; 
+            cam_write_data  = {next_cmd.id , 4'b1111} ;
+        end else begin 
+            cam_write_data   = {next_cmd.id , {PADDING_SIZE{1'b0}},selected_proc} ;
+        end
+    end else if($clog2(`PROC_COUNT) > $bits(cmd_id_t)) begin 
+        cam_compare_data = { {PADDING_SIZE{1'b0}}, next_cmd.dep,finish_bit_pos} ;
+        cam_write_data   = {{PADDING_SIZE{1'b0}},next_cmd.id , selected_proc} ;
+    end else begin 
+        cam_compare_data = {next_cmd.dep, finish_bit_pos} ;
+        cam_write_data   = {next_cmd.id , selected_proc} ;
+    end
+
+end
+//assign cam_compare_data = {next_cmd.dep, finish_bit_pos} ; // ! Maybe just don't start with 0 as the initial value for cmd ids or proc ids. but will test this 
 // TODO:  After some testing, we need to add a slice selector to the cam. (to choose if our matching algorithm should be based on command only , proc only or both) (very important)
 //assign cam_write_addr   = ( state==PROC_FINISH||cmd_source) ? cam_matched_addr : cam_free_addr;  
 assign cam_write_addr   = ( state==PROC_FINISH) ? cam_matched_addr : ((cmd_source) ? dep_store_idx : cam_free_addr);  
 
 
-assign cam_write_data   = {next_cmd.id , selected_proc} ;
-assign cam_write_enable = (((state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source)) )&&cycle_delay) || cam_write_delete) ? 1 : 0 ;  
-assign cam_write_delete = (state==PROC_FINISH && cycle_delay) ? 1 : 0;  
 
-assign select_mask = (state == CMD_CHECK || state==CAM_WRITE)  ? 2'b10 : 2'b01; // * search for proc id when it's finished, otherwise just look at cmd_id 
+
+//assign cam_write_enable = (((state==CAM_WRITE && (!cmd_source || (!cam_matched && cmd_source)) )&&cycle_delay) || cam_write_en_reg) ? 1 : 0 ;  
+assign cam_write_delete = (state==PROC_FINISH ) ? 1 : 0;  
+
+assign select_mask = (state == CMD_CHECK )  ? 2'b10 : 2'b01; // * search for proc id when it's finished, otherwise just look at cmd_id 
 // Enable write in 2 cases 
 // Came from queue (regardless of cam_matched)
 // came from fifo (and found original ad) and no longer match
-always @(posedge cam_write_enable) begin 
-    if (cam_write_delete)  begin 
-        $display ("Cam delete: compare: %b, addr: %d , ", cam_write_data, cam_write_addr);
-        //$finish; 
-    end
-    else 
-        $display ("Cam write: data: %d, addr: %d", cam_write_data, cam_write_addr);
 
-end
+
+
+
+
+
+
+
+
+
 
 cam #(
     .DATA_WIDTH  ( DATA_WIDTH   ),
@@ -392,8 +438,8 @@ cam #(
     .rst                     ( ~i_rstn            ),
     .write_addr              ( cam_write_addr     ),
     .write_data              ( cam_write_data     ),
-    .write_delete            ( cam_write_delete   ),
-    .write_enable            ( cam_write_enable   ),
+    .write_delete            ( cam_write_delete),
+    .write_enable            ( cam_write_en_reg),
     .select_mask             ( select_mask) , 
     .compare_data            ( cam_compare_data   ),
     .write_busy              ( cam_write_busy     ),
@@ -432,10 +478,10 @@ end
 /* --------- Valid Generation of next free cam entry  (cam_nxt_addr) -------- */
 logic [`MAX_CMDS-1:0] valid_entries;  
 logic fill_entry , del_entry; 
-assign del_entry = (state==PROC_FINISH && cycle_delay ) ? 1 : 0 ; 
+assign del_entry = (state==PROC_FINISH && cam_write_en_reg) ? 1 : 0 ; 
 logic free_entry;   
 assign free_entry = ~valid_entries[cam_nxt_addr] ; 
-assign fill_entry = (state==CAM_WRITE && cycle_delay) ? 1 : 0 ; 
+assign fill_entry = (cam_write_en_reg) ? 1 : 0 ; 
 always_ff @(posedge i_clk or negedge i_rstn)begin  
     if (!i_rstn) begin 
         for (int i = 0 ; i < `MAX_CMDS; i++)begin 
@@ -444,7 +490,10 @@ always_ff @(posedge i_clk or negedge i_rstn)begin
     end else begin 
         if (del_entry)begin // error here
             valid_entries[cam_write_addr] = 0; // free
-            // cam_nxt_addr<= cam_write_addr;  
+            //cam_nxt_addr<= cam_write_addr;  
+        end 
+        else if(fill_entry) begin 
+            valid_entries[cam_write_addr] = 1; // occupied
         end 
         else if (!free_entry)begin 
             if (cam_nxt_addr == `MAX_CMDS) begin
@@ -453,15 +502,13 @@ always_ff @(posedge i_clk or negedge i_rstn)begin
                 cam_nxt_addr <= cam_nxt_addr + 1; 
             end
         end
-        if(fill_entry) begin 
-            valid_entries[cam_write_addr] = 1; // occupied
-        end 
+
         
     end
 end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET && !cmd_source)? 1 :0; 
-assign o_ack_proc = ( (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO || state==SIMD_STORE)) ? (`PROC_COUNT'b1 << selected_proc): ( (state==PROC_FINISH) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
+assign o_ack_proc = ( (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO || state==SIMD_STORE)) ? (`PROC_COUNT'b1 << selected_proc): ( (state==SEND_ACK) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
 assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): 0; 
 assign o_finished_task = (state == IDLE && |i_busy_proc==0 && cam_counter==0) ? 1 : 0;
 //assign o_finished_task = (state == IDLE && |i_busy_proc==0 ) ? 1 : 0;
