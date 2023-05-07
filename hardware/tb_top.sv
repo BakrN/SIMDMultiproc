@@ -3,10 +3,16 @@
 // iverilog -g2012 -DDEBUG -o sim/tb_top.vvp tb_top.sv cam/*.v -DCMD_SIZE=224119  -DMEM_MIN=251783 -DMEM_SIZE=262144 && vvp sim/tb_top.vvp
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
-`define CMD_SIZE 16395 // 64matvec cmd
+//`define CMD_SIZE 16395 // 256 matvec cmd
+`define CMD_SIZE 16395 // 256 matvec cmd
+//`define CMD_SIZE 60128// 512matvec cmd
+//`define CMD_SIZE 16395 // 256 matvec cmd
 `endif
 `ifndef MEM_MIN 
-`define MEM_MIN  27407// 64matvec cmd
+//`define MEM_MIN  27407// 256 matvec cmd
+`define MEM_MIN  27407// 256 matvec cmd
+//`define MEM_MIN 83245 // 512 matvec cmd
+//`define MEM_MIN  27407// 256 matvec cmd
 `endif
 module tb_top() ;
 parameter T = 10 ;

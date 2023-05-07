@@ -8,7 +8,8 @@
 `define USIZE 32 
 `define BUS_W 160
 `ifndef MEM_SIZE
-`define MEM_SIZE 30000 // 128 cmd
+`define MEM_SIZE 30000 // 256  cmd
+//`define MEM_SIZE 100000 // 512 cmd
 `endif
 
 typedef logic[23:0] addr_t ;// shaerd mem address  
@@ -28,8 +29,8 @@ typedef enum logic [1:0] {INSTR_LD, INSTR_INFO, INSTR_STORE} opcode_t;
 
 typedef struct packed { 
         logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul2x , 3 for mul3x
-        logic [6:0] count;  // How many elements A
-        logic [$bits(addr_t)-1-9:0] null_placeholder; // null_placeholder
+        logic [7:0] count;  // How many elements A
+        logic [$bits(addr_t)-1-10:0] null_placeholder; // null_placeholder
 } instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
 
 typedef union packed { 
@@ -46,7 +47,7 @@ typedef struct packed{
         logic [1:0]  op ;  // add sub mul2x mul3x
         addr_t addr_0;    // Operand 0 address
         addr_t addr_1;    // Operand 1 address 
-        logic [6:0] count;  // size of operation (how many elements) 
+        logic [7:0] count;  // size of operation (how many elements) 
         addr_t wr_addr  ;  // result writeback_addr. 0 for addr_0 , 1 for addr_1 
 } cmd_info_t ;
 typedef struct packed{ 

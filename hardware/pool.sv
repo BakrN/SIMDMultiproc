@@ -1,13 +1,12 @@
 `include "defines.sv"
 `include "proc.sv"
 module pool( 
-    i_instr   ,
+    i_cmd ,
     i_clk     ,
     i_rstn    ,
     i_en      ,
     i_grant_rd   ,
     i_grant_wr   ,
-    i_valid   ,
     o_req_rd  ,
     o_req_wr ,
     o_finish  ,
@@ -22,7 +21,7 @@ module pool(
     `endif
 );
 
-input instr_t i_instr   ;
+input cmd_info_t i_cmd;
 input i_clk   ;
 input i_rstn   ;
 input [`BUS_W-1:0 ] i_data ;
@@ -30,7 +29,6 @@ input [`BUS_W-1:0 ] i_data ;
 input [`PROC_COUNT-1:0]  i_en      ;
 input [`PROC_COUNT-1:0]  i_grant_rd  ;
 input [`PROC_COUNT-1:0]  i_grant_wr  ;
-input [`PROC_COUNT-1:0]  i_valid   ;
 output [`PROC_COUNT-1:0] o_req_rd     ;
 output [`PROC_COUNT-1:0] o_req_wr     ;
 output [`PROC_COUNT-1:0] o_finish  ;
@@ -50,13 +48,12 @@ logic [2:0] test_wr  ;
 generate
  for (genvar i = 0 ; i < `PROC_COUNT ; i++)  begin 
         proc  u_proc (
-    .i_instr           (    i_instr         ),
-    .i_clk             (    i_clk           ),
-    .i_rstn            (    i_rstn          ),
+    .i_cmd             (    i_cmd      ),
+    .i_clk             (    i_clk      ),
+    .i_rstn            (    i_rstn     ),
     .i_en              (    i_en      [i] ),
     .i_grant_rd        (    i_grant_rd[i] ),
     .i_grant_wr        (    i_grant_wr[i] ),
-    .i_valid           (    i_valid   [i] ),
     .i_data            (    i_data        ),
     .o_finish          (    o_finish [i] ),
     .o_req_rd          (    o_req_rd [i] ),

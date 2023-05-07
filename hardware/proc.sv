@@ -21,8 +21,7 @@ module proc(
     i_en     ,
     i_grant_rd  , 
     i_grant_wr  , 
-    i_valid  ,
-    i_instr , 
+    i_cmd , 
     i_data , 
     o_addr  , 
     o_finish , 
@@ -38,24 +37,20 @@ module proc(
 ); 
 /* ---------------------------- Local Parameters ---------------------------- */
     // FSM setup 
-    localparam IDLE      = 4'd0;  
-    localparam LD1       = 4'd1; 
-    localparam LD2       = 4'd2;  
-    localparam SET_INFO  = 4'd3 ;
-    // FSM process           
-    localparam STORE     = 4'd4;  
-    localparam FETCH1    = 4'd5;  
-    localparam FETCH2    = 4'd6;  
-    localparam WRITE     = 4'd7;  
-    localparam FINISHED  = 4'd8;  
+    localparam IDLE      = 3'd0;  
+    localparam LD_CMD    = 3'd1; 
+    // FSM process         
+    localparam FETCH1    = 3'd2;  
+    localparam FETCH2    = 3'd3;  
+    localparam WRITE     = 3'd4;  
+    localparam FINISHED  = 3'd5;  
 /* -------------------------------- IO Ports -------------------------------- */
-    input  instr_t i_instr; 
+    input  cmd_info_t i_cmd; 
     input i_clk  ;
     input i_rstn ;
     input i_en   ;
     input i_grant_rd ;
     input i_grant_wr ;
-    input i_valid ; // also used for ack in finished stage 
     input  logic  [`BUS_W-1:0] i_data  ; // data read from shared mem
     output o_finish;
     output logic o_req_rd;
@@ -69,6 +64,10 @@ module proc(
         output [3:0] o_state; 
         assign o_state = state;
     `endif
+
+
+cmd_info_t instr_info ;
+
 /* ---------------------------- Logic Definition ---------------------------- */
 // array logci
 logic [3:0] state ;   
@@ -79,11 +78,18 @@ addr_t next_addr_1 ;
 addr_t wr_addr ; 
 addr_t next_wr_addr; 
 cmd_id_t r_id ;  
-logic [1:0] simd_opcode; // 0 for add , 1 sub , 2mul
 // SIMD regs  
 logic [`BUS_W-1:0] reg0 , reg1 ; 
-// INFO storage   
-instr_info_t instr_info ; 
+
+// assigning to instr info 
+
+assign addr_0 = instr_info.addr_0 ; 
+assign addr_1 = instr_info.addr_1 ; 
+assign wr_addr = instr_info.wr_addr ;
+
+// assigning to instr info 
+
+
 
 /* -------------------------- Modules Instantiation ------------------------- */ 
 array u_simd_arr (
@@ -95,7 +101,7 @@ array u_simd_arr (
 
 // Next address 
 always_comb begin 
-    next_addr_0 = addr_0  + `BUS_W/`USIZE ; 
+    next_addr_0 = addr_0  + `BUS_W/`USIZE ; // index
     next_addr_1 = addr_1  + `BUS_W/`USIZE ; 
     next_wr_addr= wr_addr + `BUS_W/`USIZE ; 
 end
@@ -109,54 +115,12 @@ end
             // FSM Setup 
             IDLE: begin 
                 if (i_en) begin 
-                    state <= LD1 ; 
+                    state <= LD_CMD ; 
                 end
             end 
-            LD1: begin 
-                if (i_instr.opcode == INSTR_LD && i_valid) begin 
-                    state <= LD2 ;   
-                    addr_0 <= i_instr.payload ;  
-                end
-                else  begin 
-                    state <= LD1;
-                end
-            end 
-            LD2: begin 
-                if (i_instr.opcode == INSTR_LD && i_valid) begin 
-                    state <= SET_INFO;   
-                    addr_1 <= i_instr.payload ;  
-                end
-                else begin 
-                    state <= LD2;
-                end
-            end
-            SET_INFO: begin 
-                if (i_instr.opcode == INSTR_INFO && i_valid) begin  
-                    state <= STORE;    
-
-                    if (i_instr.payload.info.op >= 2) begin 
-                        instr_info.op = i_instr.payload.info.op ; 
-                        instr_info.count = i_instr.payload.info.op ; 
-                    end else begin 
-                        instr_info.op <= i_instr.payload.info.op; 
-                        instr_info.count <= i_instr.payload.info.count; 
-
-                    end
-                end
-                else begin 
-                    state <= SET_INFO;
-                end
-
-            end 
-            STORE: begin 
-                if(i_instr.opcode == INSTR_STORE && i_valid) begin 
-                    wr_addr <= i_instr.payload; 
-                    state  <= FETCH1 ; 
-
-
-                end else begin 
-                    state <= STORE; 
-                end
+            LD_CMD: begin 
+                instr_info <= i_cmd; 
+                state <= FETCH1 ;
             end
             // FSM Process 
             FETCH1: begin 
@@ -185,9 +149,9 @@ end
                 // if req granted 
                 if (i_grant_wr)   begin 
                     //if (1)begin  // if done write
-                        addr_0 <= next_addr_0; // update addresses 
-                        addr_1 <= next_addr_1; 
-                        wr_addr <= next_wr_addr;
+                        instr_info.addr_0 <= next_addr_0; // update addresses 
+                        instr_info.addr_1 <= next_addr_1; 
+                        instr_info.wr_addr <= next_wr_addr;
                         if(instr_info.count <= 5) begin  // if done with command
                             state <= FINISHED ;  
                         end else  begin 
@@ -201,10 +165,9 @@ end
             end
             FINISHED: begin 
                  // stall here  // wait until I recieve aknowledgement from issuer that scoreboard was flushed 
-                 if (i_valid) begin 
+                 if (i_en) begin 
                     state <= IDLE ; 
                  end
-                   
                 //$display ("[PROC] FINISHED");
                  
             end

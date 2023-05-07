@@ -19,8 +19,7 @@ output finished_task ;
 
 // issuer Outputs 
 logic [`PROC_COUNT-1:0] issuer_en_proc; 
-logic [`PROC_COUNT-1:0] issuer_ack_proc;
-instr_t issuer_instr;
+cmd_info_t issuer_cmd;
 output logic   issuer_rd_queue;
 issuer  u_issuer (
     .i_clk                               (   i_clk            ),
@@ -33,8 +32,7 @@ issuer  u_issuer (
     .i_busy_proc                         (   pool_busy        ),
     .i_finish_proc                       (   pool_finish      ),
     .o_en_proc                           (   issuer_en_proc   ),
-    .o_ack_proc                          (   issuer_ack_proc  ), 
-    .o_instr                             (   issuer_instr     ),
+    .o_cmd  (   issuer_cmd ),
     // io
     .o_finished_task    (     finished_task     ) 
 );
@@ -56,14 +54,13 @@ logic [`PROC_COUNT-1:0][3:0] states;
 
 
 pool  u_pool (
-    .i_instr            (     issuer_instr      ),
+    .i_cmd              (     issuer_cmd        ),
     .i_clk              (     i_clk             ),
     .i_rstn             (     i_rstn            ),
     .i_data             (     mem_proc_rd       ),
     .i_en               (     issuer_en_proc    ),
     .i_grant_rd         (     mem_grant_rd      ),
     .i_grant_wr         (     mem_grant_wr      ),
-    .i_valid            (     issuer_ack_proc   ),
     .o_req_rd           (     pool_req_rd       ),
     .o_req_wr           (     pool_req_wr       ),
     .o_finish           (     pool_finish       ),
@@ -105,7 +102,9 @@ shared_mem #(
 );
 `ifdef DEBUG
     // collect information about each processor in pool 
-    int state_s[`PROC_COUNT-1:0][8:0];
+    int state_s[`PROC_COUNT-1:0][8:0]; 
+    int state_issuer[12]  ;  
+    int cmd_source [2] ; 
     int cycle_count ;
     always_ff @(posedge i_clk or negedge i_rstn) begin 
         if (!i_rstn) begin 
@@ -113,6 +112,9 @@ shared_mem #(
                 for (int j = 0 ; j < 9 ; j++) begin 
                     state_s[i][j] = 0 ; 
                 end
+            end 
+            for (int i = 0 ; i < 13 ; i++) begin 
+                state_issuer[i] = 0 ; 
             end
             cycle_count = 0 ; 
         end
@@ -122,18 +124,34 @@ shared_mem #(
                 // print out the statistics collected by each processor
                 $display("Processor %d: ", i);
                 $display("  Idle: %0.2f%", state_s[i][0]*100/cycle_count);
-                $display("  ld1:  %0.2f%", state_s[i][1]*100/cycle_count);
-                $display("  ld2:  %0.2f%", state_s[i][2]*100/cycle_count);
-                $display("  set_info: %0.2f", state_s[i][3]*100/cycle_count);
-                $display("  store: %0.2f", state_s[i][4]*100/cycle_count);
-                $display("  Fetch1: %0.2f", state_s[i][5]*100/cycle_count);
-                $display("  Fetch2: %0.2f", state_s[i][6]*100/cycle_count);
-                $display("  Write: %0.2f", state_s[i][7]*100/cycle_count);
-                $display("  Finished: %0.2f", state_s[i][8]*100/cycle_count);
-            end
+                $display("  ld cmd:  %0.2f%", state_s[i][1]*100/cycle_count);
+                $display("  Fetch1: %0.2f", state_s[i][2]*100/cycle_count);
+                $display("  Fetch2: %0.2f", state_s[i][3]*100/cycle_count);
+                $display("  Write: %0.2f", state_s[i][4]*100/cycle_count);
+                $display("  Finished: %0.2f", state_s[i][5]*100/cycle_count);
+            end 
+            $display ( "Issuer IDLE: %0.2f" , state_issuer[0]*100/cycle_count);
+            $display ( "Issuer SIMD_SELECT: %0.2f" , state_issuer[1]*100/cycle_count);
+            $display ( "Issuer CMD_GET: %0.2f" , state_issuer[2]*100/cycle_count);
+            $display ( "Issuer CMD_CHECK: %0.2f" , state_issuer[3]*100/cycle_count);
+            $display ( "Issuer CMD_WRITE: %0.2f" , state_issuer[4]*100/cycle_count);
+            $display ( "Issuer CMD_WRITEBACK: %0.2f" , state_issuer[5]*100/cycle_count); 
+            $display ( "Issuer FIND_PROC: %0.2f" , state_issuer[6]*100/cycle_count);
+            $display ( "Issuer PROC_FINISH: %0.2f" , state_issuer[7]*100/cycle_count); 
+            $display ( "Issuer SEND_ACK: %0.2f" , state_issuer[8]*100/cycle_count);
+            
+            $display ( "Issuer CMD_SOURCE 0: %0.2f" , cmd_source[0]*100/(cmd_source[0]+cmd_source[1]));
+            $display ( "Issuer CMD_SOURCE 1: %0.2f" , cmd_source[1]*100/(cmd_source[0]+cmd_source[1]));
+                
         end else begin 
             for (int index =  0; index < `PROC_COUNT ; index++) begin 
                 state_s[index][states[index]] = state_s[index][states[index]]+1;  
+            end
+            for (int index =  0; index < 13; index++) begin 
+                state_issuer[u_issuer.state] = state_issuer[u_issuer.state] +1;   
+                if (u_issuer.state == u_issuer.CMD_GET) begin
+                    cmd_source[u_issuer.cmd_source] = cmd_source[u_issuer.cmd_source] + 1 ;
+                end
             end
             cycle_count++ ;
         end

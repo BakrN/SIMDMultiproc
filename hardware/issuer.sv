@@ -19,8 +19,7 @@ module issuer (
     i_finish_proc, 
     i_busy_proc  , 
     o_en_proc, // enable or validate instr to proc
-    o_ack_proc , 
-    o_instr   , 
+    o_cmd , 
     o_finished_task
 ) ;  
 input i_clk ;
@@ -29,8 +28,8 @@ input i_empty_queue;
 input [`PROC_COUNT-1:0] i_busy_proc ; 
 input [`PROC_COUNT-1:0] i_finish_proc;  
 output logic [`PROC_COUNT-1:0] o_en_proc ; 
-output logic [`PROC_COUNT-1:0] o_ack_proc ;  
-output instr_t o_instr;
+output cmd_info_t o_cmd ;
+
 // fifo ports 
 input cmd_t i_cmd ; 
 output logic o_rd_queue ;
@@ -38,6 +37,8 @@ output o_finished_task;
 // State machine 
 // cam Parameters
 //
+logic mode ; // recomp/decomp(out of order) or in order (matmul stage) 
+
 localparam DATA_WIDTH   = 8 ; // ($ceil((($bits(cmd_id_t) + $clog2(`PROC_COUNT)) / SLICE_WIDTH)) * SLICE_WIDTH);
 localparam ADDR_WIDTH   = $clog2(`MAX_CMDS) ; 
 localparam PADDING_SIZE = 2 ;//DATA_WIDTH - ($bits(cmd_id_t) + $clog2(`PROC_COUNT)) ;
@@ -47,21 +48,17 @@ localparam SLICE_WIDTH  = 4;//$bits(cmd_id_t)    ; // only 2 slices
 // setup simd array  
 localparam IDLE        = 4'd0 ;
 localparam SIMD_SELECT = 4'd1 ;
-localparam SIMD_LD1    = 4'd2 ;
-localparam SIMD_LD2    = 4'd3 ;
-localparam SIMD_INFO   = 4'd4 ;
-localparam SIMD_STORE  = 4'd5 ;
 // fetching and processing from queue and checking with scoreboard 
-localparam CMD_GET   =     4'd6 ; // get from queue or fifo
-localparam CMD_CHECK =     4'd7 ; // check dep with scoreboard
-localparam CAM_WRITE =     4'd8; // insert cmd in cam 
-localparam CMD_WRITEBACK = 4'd9 ; // (put dependent cmd in fifo) 
+localparam CMD_GET   =     4'd2 ; // get from queue or fifo
+localparam CMD_CHECK =     4'd3 ; // check dep with scoreboard
+localparam CAM_WRITE =     4'd4; // insert cmd in cam 
+localparam CMD_WRITEBACK = 4'd5 ; // (put dependent cmd in fifo) 
 
 // PROC_FINISH
 
-localparam FIND_PROC   = 4'd10 ; 
-localparam PROC_FINISH = 4'd11 ; // Flush cmd from enq_cmd map 
-localparam SEND_ACK = 4'd12 ; // wait for proc to free up 
+localparam FIND_PROC   = 4'd6 ; 
+localparam PROC_FINISH = 4'd7 ; // Flush cmd from enq_cmd map 
+localparam SEND_ACK = 4'd8 ; // wait for proc to free up 
 
  
 logic [3:0] state ; 
@@ -73,7 +70,7 @@ logic cmd_source; // 0: queue , 1:fifo
 logic [1:0] proc_finish_delay; 
 logic cam_write_en_reg ; 
 assign next_cmd = {current_cmd_id, current_dep_id, next_cmd_info}; 
-
+assign o_cmd = next_cmd_info;
 // Current state update logic 
 always_ff @(posedge i_clk or negedge i_rstn) begin 
     if (!i_rstn) begin 
@@ -251,25 +248,13 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 // DELETE ABOVE
                 if (i_busy_proc[selected_proc] == 0) begin 
 
-                    state <= SIMD_LD1 ; 
+                    state <= IDLE; 
                 end
                 else begin 
                     $error("Selected proc shouldn't be zero") ; 
                     state <= SIMD_SELECT; 
                 end
             end  
-            SIMD_LD1: begin  
-                state <= SIMD_LD2;  
-            end
-            SIMD_LD2: begin 
-                state <= SIMD_INFO;
-            end
-            SIMD_INFO: begin 
-                state <= SIMD_STORE; 
-            end
-            SIMD_STORE: begin 
-                state <= IDLE;  
-            end
             default: 
                 state <= IDLE; 
         endcase
@@ -278,37 +263,6 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
 end
 
 /* ------------------- Logic For Instruction Generetation ------------------- */ 
-
-always_comb begin 
-    case (state)
-        SIMD_LD1: begin
-            o_instr.opcode  = INSTR_LD; 
-            o_instr.payload = next_cmd_info.addr_0 ; 
-        end
-        SIMD_LD2: begin 
-            o_instr.opcode  = INSTR_LD; 
-            o_instr.payload = next_cmd_info.addr_1; 
-        end
-        SIMD_INFO: begin
-            o_instr.opcode = INSTR_INFO;   
-            o_instr.payload.info.op = next_cmd_info.op; 
-            o_instr.payload.info.count= next_cmd_info.count; 
-        end
-        SIMD_STORE: begin
-            o_instr.opcode  = INSTR_STORE ; 
-            o_instr.payload.addr = next_cmd_info.wr_addr; 
-        end
-        default: begin
-            o_instr = 0 ; 
-        end
-    endcase
-end
-//assign  o_instr = (state == SIMD_LD1) ? {  INSTR_LD, next_cmd.info.addr_0 } 
-//             : ((state == SIMD_LD2) ?    {  INSTR_LD, next_cmd.info.addr_1 }
-//             : ((state == SIMD_INFO) ?   {  INSTR_INFO, { next_cmd.info.count, next_cmd.info.op }}
-//             : ((state == SIMD_STORE) ?  {INSTR_STORE , next_cmd.info.wr_addr} : 0))) ;  
-//
-/* ---------------------------- Priority find_first_set_bit for finished signals ---------------------------- */
 logic [$clog2(`PROC_COUNT)-1:0] finish_bit_pos, finished_proc ;  
 logic [$clog2(`PROC_COUNT)-1:0] selected_proc, free_proc; // selected_proc is updated on clk cycles. so not using combinational logic 
 find_first_set_bit #(`PROC_COUNT) finished_signal_finder(
@@ -508,8 +462,7 @@ always_ff @(posedge i_clk or negedge i_rstn)begin
 end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET && !cmd_source)? 1 :0; 
-assign o_ack_proc = ( (state == SIMD_LD1 || state == SIMD_LD2 || state == SIMD_INFO || state==SIMD_STORE)) ? (`PROC_COUNT'b1 << selected_proc): ( (state==SEND_ACK) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
-assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): 0; 
+assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): ( (state==SEND_ACK) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
 assign o_finished_task = (state == IDLE && |i_busy_proc==0 && cam_counter==0) ? 1 : 0;
 //assign o_finished_task = (state == IDLE && |i_busy_proc==0 ) ? 1 : 0;
 
