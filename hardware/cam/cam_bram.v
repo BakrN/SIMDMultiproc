@@ -55,10 +55,10 @@ module cam_bram #(
 assign setup = (state_reg == STATE_INIT) ;
 always @(state_reg) begin 
     if (state_reg != STATE_IDLE) begin 
-        if (!write_delete) begin 
-        $display ("CAM write   data: : %b, addr: %d , " , write_data_padded_reg, write_addr_reg);
+        if (!write_delete_next) begin 
+        $display ("CAM write   data: : %b, addr: %d , " , write_data_padded_reg, write_addr_next);
         end else 
-        $display ("CAM delete data: : %b, addr: %d , " , write_data_padded_reg, write_addr_reg);
+        $display ("CAM delete data: : %b, addr: %d , " , write_data_padded_reg, write_addr_next);
     end
 end
 // total number of slices (enough to cover DATA_WIDTH with address inputs)
@@ -228,7 +228,7 @@ always @* begin
         end
         STATE_DELETE_2: begin
             // clear bit and write back
-            clear_bit = 1'b1 << write_addr;
+            clear_bit = 1'b1 << write_addr_next; // edit here
             wr_en = 1'b1;
             if (write_delete_reg) begin
                 state_next = STATE_IDLE;
@@ -243,7 +243,7 @@ always @* begin
         end
         STATE_WRITE_2: begin
             // set bit and write back
-            set_bit = 1'b1 << write_addr;
+            set_bit = 1'b1 << write_addr_next; // edit ehre
             wr_en = 1'b1;
             state_next = STATE_IDLE;
         end

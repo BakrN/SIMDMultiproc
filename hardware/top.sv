@@ -113,7 +113,7 @@ shared_mem #(
                     state_s[i][j] = 0 ; 
                 end
             end 
-            for (int i = 0 ; i < 13 ; i++) begin 
+            for (int i = 0 ; i < 8; i++) begin 
                 state_issuer[i] = 0 ; 
             end
             cycle_count = 0 ; 
@@ -138,7 +138,6 @@ shared_mem #(
             $display ( "Issuer CMD_WRITEBACK: %0.2f" , state_issuer[5]*100/cycle_count); 
             $display ( "Issuer FIND_PROC: %0.2f" , state_issuer[6]*100/cycle_count);
             $display ( "Issuer PROC_FINISH: %0.2f" , state_issuer[7]*100/cycle_count); 
-            $display ( "Issuer SEND_ACK: %0.2f" , state_issuer[8]*100/cycle_count);
             
             $display ( "Issuer CMD_SOURCE 0: %0.2f" , cmd_source[0]*100/(cmd_source[0]+cmd_source[1]));
             $display ( "Issuer CMD_SOURCE 1: %0.2f" , cmd_source[1]*100/(cmd_source[0]+cmd_source[1]));
@@ -147,7 +146,7 @@ shared_mem #(
             for (int index =  0; index < `PROC_COUNT ; index++) begin 
                 state_s[index][states[index]] = state_s[index][states[index]]+1;  
             end
-            for (int index =  0; index < 13; index++) begin 
+            for (int index =  0; index < 8; index++) begin 
                 state_issuer[u_issuer.state] = state_issuer[u_issuer.state] +1;   
                 if (u_issuer.state == u_issuer.CMD_GET) begin
                     cmd_source[u_issuer.cmd_source] = cmd_source[u_issuer.cmd_source] + 1 ;

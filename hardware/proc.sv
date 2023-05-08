@@ -168,7 +168,7 @@ end
                  if (i_en) begin 
                     state <= IDLE ; 
                  end
-                //$display ("[PROC] FINISHED");
+
                  
             end
             default: 

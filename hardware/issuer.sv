@@ -58,7 +58,6 @@ localparam CMD_WRITEBACK = 4'd5 ; // (put dependent cmd in fifo)
 
 localparam FIND_PROC   = 4'd6 ; 
 localparam PROC_FINISH = 4'd7 ; // Flush cmd from enq_cmd map 
-localparam SEND_ACK = 4'd8 ; // wait for proc to free up 
 
  
 logic [3:0] state ; 
@@ -117,6 +116,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end
             end
             FIND_PROC: begin 
+            if (cam_write_busy) begin 
+                state <= FIND_PROC ;
+            end else begin 
             if (cycle_delay) begin 
                 cycle_delay <= 0 ;
             end else begin 
@@ -134,26 +136,19 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 state <= PROC_FINISH; 
                 cam_write_en_reg <= 1 ; 
             end
-
+            end
             end
             PROC_FINISH: begin  // wait for cam entry to be deleted  (cam writes/delets takes a lot of time) 
                     if (cam_write_en_reg) begin 
                         cam_write_en_reg <= 0 ; 
                     end else begin 
-                        if (!cam_write_busy) begin 
                         cam_counter <= cam_counter -1 ; 
                         $display ("finished command %b", finish_bit_pos); 
-                        state <= SEND_ACK ;
-                    end    else begin 
-                        $display ("PROC_FINISH: Waiting for cam to write");
-                    end
+                        state <= IDLE;
                     end
 
 
             end 
-            SEND_ACK: begin 
-                state <= IDLE ;
-            end
             CMD_GET: begin 
                 if (cmd_source) begin// fifo
                     $display("Getting command from fifo with id: %d and dep_id: %d, with data: %d , and addr : %d", dep_dout.id, dep_dout.dep, buf_dout, dep_dout.entry_idx);
@@ -171,13 +166,16 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end
             CMD_CHECK: begin // cycle to find if there is a match or not 
                 // If matched then compare it with selected finish_bit_pos
-                if (cycle_delay) begin 
-                    cycle_delay <= 0 ; 
-                end else begin  
+                if (cam_write_busy) begin 
+                    state <= CMD_CHECK ; 
+                end else begin 
+                    if (cycle_delay) begin 
+                        cycle_delay <= 0 ; 
+                    end else begin  
                    
                 $display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
                 //$display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
-                $display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h",u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
+                //$display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h",u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
                 for (int i = 0 ; i < 2 ; i++) begin 
                     $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
                 end
@@ -204,6 +202,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     state <= CMD_CHECK; 
                 end
             end
+        end
             end
             CAM_WRITE : begin  // adds new entry to cam if no match (source0) if source is 1 and no match then we overwrite the entry 
                 if (cam_write_en_reg) begin 
@@ -214,13 +213,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     $display ("Dependency of command finished executing. CMD id: %d , written to %d", next_cmd.id , dep_store_idx) ; 
                     // wait for overwrite 
                     //$finish;
-                    if (!cam_write_busy) begin 
-                      //$finish; 
                       state <= SIMD_SELECT; 
-                    end
 
                 end else begin  // first time seeing command
-                    if (!cam_write_busy) begin 
                         if(cam_matched) begin 
                             $display("Command will be written back to FIFO (dependency) , CMD id: %d , Waiting on command id: %d", next_cmd.id , next_cmd.dep);
                             state <= CMD_WRITEBACK; 
@@ -231,7 +226,6 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                         end
                         cam_counter <= cam_counter + 1;  
                     end
-                end
                 end
             end
             CMD_WRITEBACK: begin // writeback to fifo
@@ -461,8 +455,8 @@ always_ff @(posedge i_clk or negedge i_rstn)begin
     end
 end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
-assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET && !cmd_source)? 1 :0; 
-assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): ( (state==SEND_ACK) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
+assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET && !cmd_source)? 1 :0 ; 
+assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): ( (state==PROC_FINISH && cam_write_en_reg) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
 assign o_finished_task = (state == IDLE && |i_busy_proc==0 && cam_counter==0) ? 1 : 0;
 //assign o_finished_task = (state == IDLE && |i_busy_proc==0 ) ? 1 : 0;
 

@@ -3,14 +3,17 @@
 // iverilog -g2012 -DDEBUG -o sim/tb_top.vvp tb_top.sv cam/*.v -DCMD_SIZE=224119  -DMEM_MIN=251783 -DMEM_SIZE=262144 && vvp sim/tb_top.vvp
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
+//`define CMD_SIZE 108 // 16 recomp only
 //`define CMD_SIZE 16395 // 256 matvec cmd
-`define CMD_SIZE 16395 // 256 matvec cmd
+`define CMD_SIZE 16395 // 256 matvec cmd 
+//`define CMD_SIZE 59892   // 256 matvec cmd
 //`define CMD_SIZE 60128// 512matvec cmd
 //`define CMD_SIZE 16395 // 256 matvec cmd
 `endif
 `ifndef MEM_MIN 
-//`define MEM_MIN  27407// 256 matvec cmd
-`define MEM_MIN  27407// 256 matvec cmd
+//`define MEM_MIN  287 // 16 matvec cmd
+`define MEM_MIN  27407 // 256 matvec cmd
+//`define MEM_MIN  100// 256 matvec cmd
 //`define MEM_MIN 83245 // 512 matvec cmd
 //`define MEM_MIN  27407// 256 matvec cmd
 `endif
@@ -75,7 +78,6 @@ initial begin
     $fclose(init_mem_file);
 
     $display("shared mem loaded");
-    //$readmemb("py/tests/cmd_queue.txt",u_cmd_queue.memory);
     $readmemb("sim/cmd_queue.txt",u_cmd_queue.memory);
     u_cmd_queue.readPtr =  0;
     u_cmd_queue.writePtr = `CMD_SIZE ;
@@ -88,12 +90,12 @@ initial begin
     #T ;
     $display("is queue empty? %d", queue_empty);
 
-    //#(200*T);
+    //#(300*T);
     //$finish;
 
     while (!queue_empty) begin
         if(issuer_rd_queue) begin
-            //$display("cmd: %b", nxt_cmd);
+            $display("cmd size: %d", $bits(nxt_cmd));
         end
         #T ; 
     end
@@ -106,7 +108,6 @@ initial begin
     for (int i = 0 ; i < `MEM_MIN; i++) begin
         $fdisplay(mem_file,"%b",u_top.u_shared_mem.u_mem.r_mem[i]);
     end 
-
     $fclose(mem_file);
     #(T); 
     $finish ; 
