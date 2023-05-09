@@ -34,7 +34,8 @@ class OpNode : public Node{
         // using res_type = std::conditional_t<(std::is_same<T, Vec1d>::value && std::is_same<U,Vec1d>::value)||(std::is_same<T, U>::value), Vec1d, Toep2d> ; 
         OpNode(Opcode_t op) ; 
         ~OpNode() ;
-        void* GetValue() override ;
+        void* GetValue() override ; 
+        void SetResult(void* result)   {m_result= result; } ;
         void SetOperands(Node* operand0 , Node* operand1) ;  
         void SetOperands(Node* operand0 , Node* operand1, const BufferRef& ref) ;
         Opcode_t GetOpcode() ;

@@ -22,7 +22,7 @@ class Node {
         std::string GetAttribute(const std::string& key) ;
         void AddInput(Node* node) ;
         void AddUser(Node* node);
-        void SetParent(Node* node) ;  
+        void SetParent(Node* node) ;   
         Node* GetParent(); 
         // virtual 
         virtual ~Node()  ; 
