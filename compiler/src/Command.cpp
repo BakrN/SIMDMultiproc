@@ -41,7 +41,7 @@ void AddCommands(std::vector<Command>& list, OpNode* node , int cmd_id , int dep
             addr0 = toep->GetColRef().GetAddr() + toep_offset; 
             addr1 = vec->GetRef().GetAddr() +vec_offset; 
             wrbackaddr = result->GetRef().GetAddr() +vec_offset; 
-            count = (node->GetOpcode()==Opcode_t::MMUL_2x) ? 2 : 3 ; // doesn't really matter in this case  
+            count = (node->GetOpcode()==Opcode_t::MMUL_2x) ? BASE_MMUL_2x_SIZE : BASE_MMUL_3x_SIZE ; // doesn't really matter in this case  
         } else { // both vec
             Vec1d* vec0 = static_cast<Vec1d*>(node->Inputs()[0]->GetValue()) ;
             Vec1d* vec1 = static_cast<Vec1d*>(node->Inputs()[1]->GetValue()) ; 

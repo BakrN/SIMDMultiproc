@@ -4,15 +4,15 @@
 `timescale 1ns/1ps
 `ifndef CMD_SIZE
 //`define CMD_SIZE 108 // 16 recomp only
-//`define CMD_SIZE 16395 // 256 matvec cmd
-`define CMD_SIZE 16395 // 256 matvec cmd 
+`define CMD_SIZE 8 // 32 16x16matvec cmd
+//`define CMD_SIZE 378 // 256 16x16 matvec cmd 
 //`define CMD_SIZE 59892   // 256 matvec cmd
 //`define CMD_SIZE 60128// 512matvec cmd
 //`define CMD_SIZE 16395 // 256 matvec cmd
 `endif
 `ifndef MEM_MIN 
-//`define MEM_MIN  287 // 16 matvec cmd
-`define MEM_MIN  27407 // 256 matvec cmd
+`define MEM_MIN  205 // 16 matvec cmd
+//`define MEM_MIN  7967// 256 16x16 matvec cmd
 //`define MEM_MIN  100// 256 matvec cmd
 //`define MEM_MIN 83245 // 512 matvec cmd
 //`define MEM_MIN  27407// 256 matvec cmd
@@ -95,7 +95,6 @@ initial begin
 
     while (!queue_empty) begin
         if(issuer_rd_queue) begin
-            $display("cmd size: %d", $bits(nxt_cmd));
         end
         #T ; 
     end

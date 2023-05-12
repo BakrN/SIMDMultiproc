@@ -53,14 +53,14 @@ module cam_bram #(
     output wire setup 
 );
 assign setup = (state_reg == STATE_INIT) ;
-always @(state_reg) begin 
+/*always @(state_reg) begin 
     if (state_reg != STATE_IDLE) begin 
         if (!write_delete_next) begin 
         $display ("CAM write   data: : %b, addr: %d , " , write_data_padded_reg, write_addr_next);
         end else 
         $display ("CAM delete data: : %b, addr: %d , " , write_data_padded_reg, write_addr_next);
     end
-end
+end*/
 // total number of slices (enough to cover DATA_WIDTH with address inputs)
 localparam SLICE_COUNT = (DATA_WIDTH + SLICE_WIDTH - 1) / SLICE_WIDTH;
 // depth of RAMs

@@ -157,9 +157,9 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     next_cmd_info  <= buf_dout; 
                     dep_store_idx  <= dep_dout.entry_idx; 
                 end else begin 
-                    $display("Getting new command from outside queue with data", i_cmd);
+                    //$display("Getting new command from outside queue with data", i_cmd);
                     {current_cmd_id , current_dep_id ,next_cmd_info} <= i_cmd; 
-                    $display("Input command : %b", i_cmd);
+                    //$display("Input command : %b", i_cmd);
                 end
                 state <= CMD_CHECK;
                 cycle_delay <= 1; 
@@ -174,7 +174,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     end else begin  
                    
                 $display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
-                //$display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
+                $display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
                 //$display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h",u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
                 for (int i = 0 ; i < 2 ; i++) begin 
                     $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);

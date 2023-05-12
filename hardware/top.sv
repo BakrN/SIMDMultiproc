@@ -102,7 +102,7 @@ shared_mem #(
 );
 `ifdef DEBUG
     // collect information about each processor in pool 
-    int state_s[`PROC_COUNT-1:0][8:0]; 
+    int state_s[`PROC_COUNT-1:0][10:0]; 
     int state_issuer[12]  ;  
     int cmd_source [2] ; 
     int cycle_count ;
@@ -127,8 +127,13 @@ shared_mem #(
                 $display("  ld cmd:  %0.2f%", state_s[i][1]*100/cycle_count);
                 $display("  Fetch1: %0.2f", state_s[i][2]*100/cycle_count);
                 $display("  Fetch2: %0.2f", state_s[i][3]*100/cycle_count);
-                $display("  Write: %0.2f", state_s[i][4]*100/cycle_count);
-                $display("  Finished: %0.2f", state_s[i][5]*100/cycle_count);
+                $display("  PREFETCH: %0.2f", state_s[i][4]*100/cycle_count);
+                $display("  Write: %0.2f", state_s[i][5]*100/cycle_count);
+                $display("  Finished: %0.2f", state_s[i][6]*100/cycle_count);
+                $display("  MATMUL: %0.2f", state_s[i][7]*100/cycle_count);
+                $display("  NEXT_COL: %0.2f", state_s[i][8]*100/cycle_count);
+                $display("  NEXT_ROW: %0.2f", state_s[i][9]*100/cycle_count);
+                $display("  SHIFT_REG: %0.2f", state_s[i][10]*100/cycle_count);
             end 
             $display ( "Issuer IDLE: %0.2f" , state_issuer[0]*100/cycle_count);
             $display ( "Issuer SIMD_SELECT: %0.2f" , state_issuer[1]*100/cycle_count);

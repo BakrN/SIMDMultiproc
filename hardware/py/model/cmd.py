@@ -57,8 +57,8 @@ def cmd_from_bin(bin_str):
     cmd.opcode = Opcode(int(bin_str[8:10], 2))
     cmd.addr0 = int(bin_str[10:34], 2)
     cmd.addr1 = int(bin_str[34:58], 2)
-    cmd.count = int(bin_str[58:64], 2)
-    cmd.writeback_addr = int(bin_str[64:88], 2)
+    cmd.count = int(bin_str[58:66], 2) 
+    cmd.writeback_addr = int(bin_str[66:], 2)
     return cmd
 class Node: 
     def __init__(self, data, parent = None , children: list = None) -> None:

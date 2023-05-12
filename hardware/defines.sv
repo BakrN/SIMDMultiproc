@@ -7,7 +7,7 @@
 `define USIZE 32 
 `define BUS_W 128
 `ifndef MEM_SIZE
-`define MEM_SIZE 30000 // 256  cmd
+`define MEM_SIZE 1000 // 256  cmd
 //`define MEM_SIZE 100000 // 512 cmd
 `endif
 
@@ -26,21 +26,6 @@ typedef enum logic [1:0] {ADD_OP, SUB_OP, MAC} opcode_t;
 // Write: contains addr or index and size of data to overwrite
 // set info:  set size 
 
-typedef struct packed { 
-        logic [1:0] op ; // operation . 0 for add ,  1 for sub , 2 for mul2x , 3 for mul3x
-        logic [7:0] count;  // How many elements A
-        logic [$bits(addr_t)-1-10:0] null_placeholder; // null_placeholder
-} instr_info_t ; // this is only valid for instr info case. Otherwise it just the address
-
-typedef union packed { 
-    addr_t addr ;
-    instr_info_t info ;
-} payload_t ;
-typedef struct packed{ 
-        opcode_t  opcode  ; 
-        payload_t payload ;  
-}instr_t;   // Instruction run on each proc
- 
 
 typedef struct packed{
         logic [1:0]  op ;  // add sub mul2x mul3x
