@@ -49,7 +49,7 @@ wire[2:0] pool_wr_size [`PROC_COUNT-1:0];
 
 
 `ifdef DEBUG 
-logic [`PROC_COUNT-1:0][3:0] states; 
+logic [`PROC_COUNT-1:0][4:0] states; 
 `endif
 
 

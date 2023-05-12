@@ -3,10 +3,9 @@
 
 
 `define PROC_COUNT  4
-`define UNIT_SIZE   4          // int32 
 `define MAX_CMDS `PROC_COUNT*2 // Maximum amount of commands that could be stored in CAM 
 `define USIZE 32 
-`define BUS_W 160
+`define BUS_W 128
 `ifndef MEM_SIZE
 `define MEM_SIZE 30000 // 256  cmd
 //`define MEM_SIZE 100000 // 512 cmd
@@ -22,8 +21,8 @@ typedef struct packed{
 
 
 
-// OPCODES: add , mul , ld  , set info , write , sub 
-typedef enum logic [1:0] {INSTR_LD, INSTR_INFO, INSTR_STORE} opcode_t; 
+// opcodes: add , sub , multiply , reduce 
+typedef enum logic [1:0] {ADD_OP, SUB_OP, MAC} opcode_t; 
 // Write: contains addr or index and size of data to overwrite
 // set info:  set size 
 
@@ -63,6 +62,9 @@ typedef struct packed {
       cmd_id_t dep ; // dep id 
       logic[$clog2(`MAX_CMDS)-1:0] entry_idx;// position of cmd info stored instr 
 } dep_cmd_t ; 
+
+
+
 `define assert_equals(signal1, signal2, message) \
   if (signal1 !== signal2) begin \
     $error("Assertion failed: signal1:%d , signal2:%d ,%s", signal1, signal2, message); \
