@@ -45,7 +45,7 @@ module proc_tb;
         .o_wr_size               (       o_wr_size      ),
         .o_data                  (       o_data         )
     );
-    integer f_input, f_test_add, f_test_sub, f_test_mul , f_test_mul_2x , f_test_mul_3x ; 
+    integer f_input, f_test_add, f_test_sub, f_test_mul ; 
     // clock instantiation 
     initial begin 
       forever begin
@@ -269,6 +269,7 @@ module proc_tb;
       
       $readmemh("py/tests/proc/matmul/mat.txt",mat_data);
       $readmemh("py/tests/proc/matmul/vec.txt",vec_data);
+      f_test_mul = $fopen("py/tests/proc/matmul/test_out.txt","w");
       #T ; 
       i_en = 1 ; 
       i_grant_rd =1 ; 
@@ -288,10 +289,10 @@ module proc_tb;
                 i_data[i]  = mat_data[(o_addr-i_cmd.addr_0)+(SIMD_WIDTH-i-1)];
               end 
               if (u_proc.state == u_proc.FETCH1) begin 
-                $display ("[FETCH1]: Trying to read data: %d",o_addr); 
+                //$display ("[FETCH1]: Trying to read data: %d",o_addr); 
               end
               else begin 
-                $display ("[PRE_FETCH]: Trying to read data: %d",o_addr); 
+                //$display ("[PRE_FETCH]: Trying to read data: %d",o_addr); 
               end
           end   
           else if (u_proc.state == u_proc.FETCH2) begin 
@@ -300,8 +301,11 @@ module proc_tb;
               end
           end 
           else if (u_proc.state == u_proc.WRITE ) begin 
-              $display ("o_addr: %d",o_addr); 
-              $display ("o_data: %h",o_data);
+              for (int i = SIMD_WIDTH-1 ; i>=0; i-- ) begin 
+                  $fwrite(f_test_mul,"%h\n",o_data[i]);
+              end
+              //$display ("o_addr: %d",o_addr); 
+              //$display ("o_data: %h",o_data);
           end
           #T; 
 
