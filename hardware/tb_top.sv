@@ -2,21 +2,26 @@
 // run scale: 
 // iverilog -g2012 -DDEBUG -o sim/tb_top.vvp tb_top.sv cam/*.v -DCMD_SIZE=224119  -DMEM_MIN=251783 -DMEM_SIZE=262144 && vvp sim/tb_top.vvp
 `timescale 1ns/1ps
+`ifndef
+`define RECOMP_CMD_SIZE  44 
+`endif
 `ifndef CMD_SIZE
 //`define CMD_SIZE 108 // 16 recomp only
-`define CMD_SIZE 8 // 32 16x16matvec cmd
-//`define CMD_SIZE 378 // 256 16x16 matvec cmd 
+//`define CMD_SIZE  115// 64 16x16matvec cmd 
+
+`define CMD_SIZE 378 // 256 16x16 matvec cmd 
 //`define CMD_SIZE 59892   // 256 matvec cmd
 //`define CMD_SIZE 60128// 512matvec cmd
 //`define CMD_SIZE 16395 // 256 matvec cmd
 `endif
 `ifndef MEM_MIN 
-`define MEM_MIN  205 // 16 matvec cmd
+`define MEM_MIN  100// 16 matvec cmd
 //`define MEM_MIN  7967// 256 16x16 matvec cmd
 //`define MEM_MIN  100// 256 matvec cmd
 //`define MEM_MIN 83245 // 512 matvec cmd
 //`define MEM_MIN  27407// 256 matvec cmd
 `endif
+
 module tb_top() ;
 parameter T = 10 ;
 // top Inputs
@@ -65,6 +70,7 @@ initial begin
 end
 // In this test I will just stall if there is a dependency 
 int mem_file, init_mem_file  ;
+
 initial begin
     // Load initial mem 
     $readmemb("sim/init_mem.txt",u_top.u_shared_mem.u_mem.r_mem); 
@@ -80,7 +86,7 @@ initial begin
     $display("shared mem loaded");
     $readmemb("sim/cmd_queue.txt",u_cmd_queue.memory);
     u_cmd_queue.readPtr =  0;
-    u_cmd_queue.writePtr = `CMD_SIZE ;
+    u_cmd_queue.writePtr = `CMD_SIZE -`RECOMP_CMD_SIZE ;
     u_cmd_queue.o_count = `CMD_SIZE;
     
     // reset 
@@ -103,6 +109,14 @@ initial begin
     while (!finished_task) begin
         #T ;
     end
+    $display("Finished decomp stage");
+    u_cmd_queue.writePtr = `CMD_SIZE ;
+    #T ;
+    while (!finished_task) begin
+        #T ;
+    end
+    $display("Finished recomp stage");
+    #(10*T);
     mem_file = $fopen("py/tests/sim_mem.txt", "w");
     for (int i = 0 ; i < `MEM_MIN; i++) begin
         $fdisplay(mem_file,"%b",u_top.u_shared_mem.u_mem.r_mem[i]);

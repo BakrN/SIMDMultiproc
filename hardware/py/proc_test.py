@@ -62,20 +62,20 @@ def generate_matmul_files(size = 16):
 
 # Run experiment 
 #generate_add_files() 
-#generate_matmul_files() 
+generate_matmul_files() 
 
-mat = [random.randint(-4 , 4) for i in  range(7) ]
-vec = [random.randint(-4 , 4) for i in  range(4) ]
-out = [0 for i in range(4)]
-for row in range (4):
-    for col in range(4):
-        out[row] += mat[3 - row + col ] * vec[col]
-print("Printing mat: "  )  
-print(mat) 
-print("Printing vec: "  )
-print(vec)
-print("Printing out: "  )
-print(out) 
+#mat = [random.randint(-4 , 4) for i in  range(7) ]
+#vec = [random.randint(-4 , 4) for i in  range(4) ]
+#out = [0 for i in range(4)]
+#for row in range (4):
+#    for col in range(4):
+#        out[row] += mat[3 - row + col ] * vec[col]
+#print("Printing mat: "  )  
+#print(mat) 
+#print("Printing vec: "  )
+#print(vec)
+#print("Printing out: "  )
+#print(out) 
 
 # Verification  
 # * FULLY VERIFIES 

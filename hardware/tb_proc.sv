@@ -159,7 +159,7 @@ module proc_tb;
             end else begin  
                 `assert_equals(u_proc.arr_a[index],u_proc.reg0[(index-i)*32+:32] , "arr_a") 
             end
-            `assert_equals(u_proc.arr_b[index],u_proc.reg1[(i)*32+:32] , "arr_b" ) 
+            `assert_equals(u_proc.arr_b[index],u_proc.reg1[(SIMD_WIDTH-i)*32-1-:32] , "arr_b" ) 
         end
         #T ;
         while (u_proc.arr_valid != 1) begin 
@@ -289,10 +289,10 @@ module proc_tb;
                 i_data[i]  = mat_data[(o_addr-i_cmd.addr_0)+(SIMD_WIDTH-i-1)];
               end 
               if (u_proc.state == u_proc.FETCH1) begin 
-                //$display ("[FETCH1]: Trying to read data: %d",o_addr); 
+                $display ("[FETCH1]: Trying to read data: %d",o_addr); 
               end
               else begin 
-                //$display ("[PRE_FETCH]: Trying to read data: %d",o_addr); 
+                $display ("[PRE_FETCH]: Trying to read data: %d",o_addr); 
               end
           end   
           else if (u_proc.state == u_proc.FETCH2) begin 
@@ -304,8 +304,8 @@ module proc_tb;
               for (int i = SIMD_WIDTH-1 ; i>=0; i-- ) begin 
                   $fwrite(f_test_mul,"%h\n",o_data[i]);
               end
-              //$display ("o_addr: %d",o_addr); 
-              //$display ("o_data: %h",o_data);
+              $display ("o_addr: %d",o_addr); 
+              $display ("o_data: %h",o_data);
           end
           #T; 
 

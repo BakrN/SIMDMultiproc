@@ -115,14 +115,14 @@ int main(int argc, char** argv) {
     for (auto& cmd : command_generator.GetToepCommands()) { 
         std::cout << cmd << std::endl ; 
     }
-    //std::cout << "Printing vec commands" << std::endl;
-    //for (auto& cmd : command_generator.GetVecCommands()) { 
-    //    std::cout << cmd << std::endl ; 
-    //}
-    //std::cout << "Printing recomp commands with size: " << command_generator.GetRecompCommands().size()<< std::endl;
-    //for (auto& cmd : command_generator.GetRecompCommands()) { 
-    //    std::cout << cmd << std::endl ; 
-    //}
+    std::cout << "Printing vec commands" << std::endl;
+    for (auto& cmd : command_generator.GetVecCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
+    std::cout << "Printing recomp commands with size: " << command_generator.GetRecompCommands().size()<< std::endl;
+    for (auto& cmd : command_generator.GetRecompCommands()) { 
+        std::cout << cmd << std::endl ; 
+    }
     Solver::ExecuteCmds(decomp_out , command_generator.GetToepCommands()  ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetVecCommands()   ) ;
     Solver::ExecuteCmds(decomp_out , command_generator.GetRecompCommands()) ;
@@ -136,9 +136,18 @@ int main(int argc, char** argv) {
     Serializer::SerializeCommand(command_generator.GetVecCommands() ,"../../hardware/sim/cmd_queue.txt", true) ;
     Serializer::SerializeCommand(command_generator.GetRecompCommands() ,"../../hardware/sim/cmd_queue.txt", true) ;
     std::cout << "finished writing: " << command_generator.GetRecompCommands().size()+ command_generator.GetToepCommands().size()+command_generator.GetVecCommands().size()<< " commands" << std::endl ;
+    std::cout << "Recomp commands: " << command_generator.GetRecompCommands().size() << std::endl ;
     Serializer::SerializeMem(decomp_out, toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart(), "../../hardware/sim/valid_mem.txt") ;
     std::cout << "Finished writing mem with size: " << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
     //std::cout << " Finished writing mem: 
-    std::cout << " Final Buffer Size: "  << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    std::cout << " Final Buffer Size: "  << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ; 
+    // Write to the config file 
+    std::ofstream config_file ;
+    config_file.open("../../hardware/sim/config.txt") ;
+    config_file << "CMD_SIZE=" << command_generator.GetRecompCommands().size()+ command_generator.GetToepCommands().size()+command_generator.GetVecCommands().size() << std::endl ;
+    config_file << "MEM_SIZE=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    config_file << "MEM_MIN=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    config_file << "RECOMP_CMD_SIZE=" << command_generator.GetRecompCommands().size() << std::endl ;
+    config_file << "TOEP_CMD_SIZE=" << command_generator.GetToepCommands().size() << std::endl ;
     return 0 ; 
 } 

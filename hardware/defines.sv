@@ -7,7 +7,7 @@
 `define USIZE 32 
 `define BUS_W 128
 `ifndef MEM_SIZE
-`define MEM_SIZE 1000 // 256  cmd
+`define MEM_SIZE 100 // 256  cmd
 //`define MEM_SIZE 100000 // 512 cmd
 `endif
 

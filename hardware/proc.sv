@@ -134,10 +134,11 @@ simd_array #(.UNIT_SIZE(`USIZE), .WIDTH(SIMD_WIDTH)) u_arr(
     .o_res  (arr_res_raw)
 );
 // Array input logic assignment 
-always_comb begin : array_input_logic 
+always_comb begin : array_io
     if (instr_info.op[1]) begin 
         // matmul 
-        // mac_ops_done
+        // mac_ops_done 
+
         for (int i = 0 ; i < SIMD_WIDTH; i++) begin  
             if (mac_ops_done+(SIMD_WIDTH-1-i)>=SIMD_WIDTH) begin 
                 // pre fetcher here
@@ -145,7 +146,8 @@ always_comb begin : array_input_logic
             end else begin 
                  arr_a[i] = reg0[(i-mac_ops_done)*`USIZE +: `USIZE];   
             end
-            arr_b[i] = reg1[(SIMD_WIDTH-1-mac_ops_done)*`USIZE +: `USIZE];
+            arr_b[i] = reg1[(SIMD_WIDTH-mac_ops_done)*`USIZE-1 -: `USIZE]; 
+            o_data[i*`USIZE +: `USIZE] = arr_res[SIMD_WIDTH-1-i]; 
         end 
 
 
@@ -155,15 +157,11 @@ always_comb begin : array_input_logic
         for (int i = 0 ; i < SIMD_WIDTH; i++) begin 
             arr_a[i] = reg0[i*`USIZE +: `USIZE];
             arr_b[i] = reg1[i*`USIZE +: `USIZE];
+            o_data[i*`USIZE +: `USIZE] = arr_res[i];
         end
     end
 end
 
-always_comb begin 
-    for (int i=  0; i < SIMD_WIDTH ; i++) begin 
-        o_data[i*`USIZE +: `USIZE] = arr_res[SIMD_WIDTH-1-i]; 
-    end
-end
 
 
 
@@ -264,7 +262,7 @@ end
                 end else begin 
                 if (i_grant_wr)   begin 
                     //if (1)begin  // if done write  
-
+                        //$display("[PROC] WRITE, o_addr: %d, o_data: %h , o_wr_size: %d", o_addr, o_data, o_wr_size);
                         if (!instr_info.op[1]) begin // not mat mul 
                             instr_info.wr_addr <= next_wr_addr;
                             if(task_size <= SIMD_WIDTH) begin  // if done with command
@@ -348,8 +346,8 @@ end
                 current_row <= next_row; 
                 current_col <= 0 ; // set next state 
                 row_addr <= row_addr + SIMD_WIDTH;
-                addr_0 <= row_addr+SIMD_WIDTH ;   
-                addr_1 <= instr_info.addr_1;
+                addr_0   <= row_addr + SIMD_WIDTH ;   
+                addr_1   <= instr_info.addr_1;
                 state<= WRITE ; 
             end
             FINISHED: begin 

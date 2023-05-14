@@ -4,7 +4,7 @@ module mem_mod #(parameter DEPTH = 1024, SIZE = 32 , BLOCK_SIZE=5, ADDR_SIZE= 24
     input i_clk,
     input [ADDR_SIZE-1:0] i_addr_w,
     input [SIZE*BLOCK_SIZE-1:0] i_data_w, 
-    input [$clog2(BLOCK_SIZE)-1:0] i_wr_size,  // write block size
+    input [$clog2(BLOCK_SIZE):0] i_wr_size,  // write block size
     input i_wr_en,
     input [ADDR_SIZE-1:0] i_addr_r, 
     output logic [SIZE*BLOCK_SIZE-1:0] o_data /// contiguos block of mem
@@ -21,7 +21,7 @@ always_ff @(posedge i_clk)  begin
        end
    end
    //if (i_wr_en) begin 
-   //     //$display("i_addr_w = %h,   size = %h, data: %h", i_addr_w, i_wr_size, i_data_w);
+   //     $display("i_addr_w = %h,   size = %h, data: %h", i_addr_w, i_wr_size, i_data_w);
    // end
 end
 always_comb begin 

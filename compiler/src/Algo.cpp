@@ -39,8 +39,9 @@ Graph* DecompositionGraphBuilder::BuildGraph() {
                     } else { 
                         OpNode* op = new OpNode(Opcode_t::MMUL_2x) ;
                         Vec1d* vec = static_cast<Vec1d*>(pnode->GetVecNode()->GetValue()) ;
-                        BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
-                        op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode(), ref) ;
+                        //BufferRef ref = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()) ;
+                        op->SetOperands(pnode->GetToepNode(), pnode->GetVecNode()) ;  
+                        pnode->SetVecNode(op) ;
                         continue ; 
                     } 
                 } else if (toep->Size() %3 == 0) { 

@@ -15,6 +15,7 @@ class ProductNode : public Node {
         void* GetValue() override ; 
         Node* GetToepNode() ; 
         Node* GetVecNode()  ;  
+        void SetVecNode(Node* vec) ;
         void GetResultFromInputs() ; // set vec's value
     private: 
         Node* m_toep ; 

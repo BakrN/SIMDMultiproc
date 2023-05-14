@@ -16,7 +16,16 @@ ProductNode::ProductNode(Node* toep, Node* vec ,bool overwrite) : m_toep(toep), 
     //    m_result = new Vec1d(static_cast<Vec1d*>(vec->GetValue())->GetRef().GetBuffer(), static_cast<Vec1d*>(vec->GetValue())->Size()) ;
     //}
 }  
-    
+
+void ProductNode::SetVecNode(Node* vec) { 
+    if(m_result) { 
+        delete m_result ;
+    } 
+    m_vec->SetParent(nullptr) ;
+    vec->SetParent(this); 
+    m_vec = vec ; 
+    m_result = new Vec1d(*static_cast<Vec1d*>(vec->GetValue())) ; 
+}
 ProductNode::~ProductNode() { 
 };  
 void ProductNode::GetResultFromInputs() { 
@@ -93,7 +102,7 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1)  {
     this->AddInput(operand0) ;
     this->AddInput(operand1) ;
     std::string op0type = operand0->GetAttribute("value_type") ; 
-    std::string op1type = operand0->GetAttribute("value_type") ;  
+    std::string op1type = operand1->GetAttribute("value_type") ;  
     assert(op0type == "vec" || op0type=="toep") ;
     assert(op1type == "vec" || op1type=="toep") ;
     if (op0type == "toep" && op1type == "toep") { 
@@ -110,7 +119,14 @@ void OpNode::SetOperands(Node* operand0 , Node* operand1)  {
     } 
     else {  
         // TODO: mat mul case
-        std::cout << "Mat mul case" << std::endl ;
+        this->AddAttribute("value_type", "vec") ;
+        if (op0type=="toep") { 
+            Vec1d* vec = static_cast<Vec1d*>(operand1->GetValue()) ;
+            m_result = static_cast<void*>(new Vec1d(vec->GetRef().GetBuffer(), vec->Size()));
+        } else {
+            Vec1d* vec = static_cast<Vec1d*>(operand0->GetValue()) ;
+            m_result = static_cast<void*>(new Vec1d(vec->GetRef().GetBuffer(), vec->Size()));
+        } 
     } 
     operand0->AddUser(this) ;
     operand1->AddUser(this) ; 

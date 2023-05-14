@@ -102,10 +102,15 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 else if (~&i_busy_proc) begin  
                     // pop last cmd from fifo
                     // Priorities: if cmd finishes check fifo for any dependent  cmds
-                    if (dep_fifo_empty ) begin 
+                    if (dep_fifo_empty || dep_counter<=1 ) begin 
                         cmd_source = 0 ; 
                     end  else if (i_empty_queue) begin 
+                        dep_counter <= dep_count ;
                         cmd_source =1 ; 
+                    end else begin 
+                        if (dep_counter >0 ) begin 
+                            dep_counter <= dep_counter-1 ; 
+                        end
                     end
 
                     if ((((!dep_fifo_empty ) && cmd_source) || !i_empty_queue)&& cam_counter <`MAX_CMDS) begin 
@@ -122,17 +127,17 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             if (cycle_delay) begin 
                 cycle_delay <= 0 ;
             end else begin 
-                $display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
+                //$display ("PROC_FINISH: Checking for a match for this data: %b . Match: %b , Match_addr: %h", u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
                 if (!cam_match) begin 
                     
                     for (int i = 0 ; i < 2 ; i++) begin 
-                        $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
+                        //$display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
                     end
-                    $display(" TRYING TO DELETE PROC THAT DOESN'T EXIST");
+                    //$display(" TRYING TO DELETE PROC THAT DOESN'T EXIST");
                     $finish; 
                 end
                 cam_matched_addr <= cam_match_addr ;
-                $display ("PROC_FINISH :FOUND MATCH AT %h", cam_match_addr);
+                //$display ("PROC_FINISH :FOUND MATCH AT %h", cam_match_addr);
                 state <= PROC_FINISH; 
                 cam_write_en_reg <= 1 ; 
             end
@@ -143,7 +148,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                         cam_write_en_reg <= 0 ; 
                     end else begin 
                         cam_counter <= cam_counter -1 ; 
-                        $display ("finished command %b", finish_bit_pos); 
+                        //$display ("finished command %b", finish_bit_pos); 
                         state <= IDLE;
                     end
 
@@ -151,7 +156,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end 
             CMD_GET: begin 
                 if (cmd_source) begin// fifo
-                    $display("Getting command from fifo with id: %d and dep_id: %d, with data: %d , and addr : %d", dep_dout.id, dep_dout.dep, buf_dout, dep_dout.entry_idx);
+                    //$display("Getting command from fifo with id: %d and dep_id: %d, with data: %d , and addr : %d", dep_dout.id, dep_dout.dep, buf_dout, dep_dout.entry_idx);
                     current_cmd_id <= dep_dout.id ; 
                     current_dep_id <= dep_dout.dep; 
                     next_cmd_info  <= buf_dout; 
@@ -173,11 +178,11 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                         cycle_delay <= 0 ; 
                     end else begin  
                    
-                $display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
-                $display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
+                //$display("New command has id: %d , dep_id: %d ", current_cmd_id , current_dep_id); 
+                //$display("Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
                 //$display ("Checking for a match for this data: %b . Match: %b , Match_addr: %h",u_enq_cmds.cam_inst.compare_data_padded , cam_match, cam_match_addr) ;  
                 for (int i = 0 ; i < 2 ; i++) begin 
-                    $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
+                //    $display ("match many raw _out: %b", u_enq_cmds.cam_inst.match_raw_out[i]);
                 end
                 cam_matched <= cam_match ; 
                 cam_matched_addr <= cam_match_addr ; 
@@ -189,14 +194,14 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                     cam_free_addr <= cam_nxt_addr; 
                     if (cmd_source && cam_match) begin 
                         state <= CMD_WRITEBACK;  
-                        $display ("CMD still needs command to be executed. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ; 
+                        //$display ("CMD still needs command to be executed. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ; 
                     end else begin 
                         cam_write_en_reg <= 1 ;
                         state <= CAM_WRITE ;  
                     end
                 end else begin 
                     
-                    $display ("No free entry in cam. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ;
+                    //$display ("No free entry in cam. CMD id: %d , CTE: %d", next_cmd.id , next_cmd.dep) ;
 
                     //$finish; 
                     state <= CMD_CHECK; 
@@ -210,18 +215,18 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
                 end 
                 else begin  
                 if (cmd_source) begin  
-                    $display ("Dependency of command finished executing. CMD id: %d , written to %d", next_cmd.id , dep_store_idx) ; 
+                    //$display ("Dependency of command finished executing. CMD id: %d , written to %d", next_cmd.id , dep_store_idx) ; 
                     // wait for overwrite 
                     //$finish;
                       state <= SIMD_SELECT; 
 
                 end else begin  // first time seeing command
                         if(cam_matched) begin 
-                            $display("Command will be written back to FIFO (dependency) , CMD id: %d , Waiting on command id: %d", next_cmd.id , next_cmd.dep);
+                            //$display("Command will be written back to FIFO (dependency) , CMD id: %d , Waiting on command id: %d", next_cmd.id , next_cmd.dep);
                             state <= CMD_WRITEBACK; 
                             dep_store_idx <= cam_free_addr;
                         end else begin
-                            $display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
+                            //$display("Continuing with SIMD selection, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep); 
                             state <= SIMD_SELECT; 
                         end
                         cam_counter <= cam_counter + 1;  
@@ -230,14 +235,14 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
             end
             CMD_WRITEBACK: begin // writeback to fifo
                 state <= IDLE; 
-                $display ("Writing back to FIFO, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ;
+                //$display ("Writing back to FIFO, CMD id: %d , DEP id: %d", next_cmd.id , next_cmd.dep) ;
             end
             
             SIMD_SELECT: begin  
-                $display ("enable signal %b", o_en_proc ) ; 
+                //$display ("selected processor %b", o_en_proc ) ; 
                 // DELETE BELOW
                 if (cmd_source) begin 
-                    $display("came from FIFO: Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
+                    //$display("came from FIFO: Command opcode: %d , addr0: %d , addr1: %d , writeback: %d , count: %d", next_cmd_info.op, next_cmd_info.addr_0, next_cmd_info.addr_1, next_cmd_info.wr_addr, next_cmd_info.count);
                 end
                 // DELETE ABOVE
                 if (i_busy_proc[selected_proc] == 0) begin 
@@ -282,7 +287,7 @@ dep_cmd_t dep_dout, dep_din;
 logic [$clog2(`MAX_CMDS)-1:0] dep_store_idx;// in buf
 logic dep_fifo_full;
 logic dep_fifo_empty;
-logic [$clog2(FIFO_DEPTH)-1:0] dep_count ;
+logic [$clog2(FIFO_DEPTH)-1:0] dep_count ,dep_counter;
 localparam FIFO_WIDTH = $bits(dep_cmd_t); 
 localparam FIFO_DEPTH  = `MAX_CMDS; // * Try decreasing the size and stall for instruction to finish on proce
 
@@ -419,7 +424,7 @@ always_ff @(posedge i_clk or negedge i_rstn) begin
     end else begin 
         if (buf_wr_en) begin 
             buf_mem[buf_addr_w] = buf_din;
-            $display ("Writing to buf_mem[%d] = %d",buf_addr_w, buf_din);
+            //$display ("Writing to buf_mem[%d] = %d",buf_addr_w, buf_din);
         end
     end
 end
