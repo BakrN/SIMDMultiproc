@@ -145,8 +145,8 @@ int main(int argc, char** argv) {
     std::ofstream config_file ;
     config_file.open("../../hardware/sim/config.txt") ;
     config_file << "CMD_SIZE=" << command_generator.GetRecompCommands().size()+ command_generator.GetToepCommands().size()+command_generator.GetVecCommands().size() << std::endl ;
-    config_file << "MEM_SIZE=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
-    config_file << "MEM_MIN=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    //config_file << "MEM_SIZE=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
+    //config_file << "MEM_MIN=" << toep_buf.GetFree() -toep_buf.GetStart() + vec_buf.GetFree() - vec_buf.GetStart() << std::endl ;
     config_file << "RECOMP_CMD_SIZE=" << command_generator.GetRecompCommands().size() << std::endl ;
     config_file << "TOEP_CMD_SIZE=" << command_generator.GetToepCommands().size() << std::endl ;
     return 0 ; 

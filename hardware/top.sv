@@ -49,7 +49,7 @@ wire[2:0] pool_wr_size [`PROC_COUNT-1:0];
 
 
 `ifdef DEBUG 
-logic [`PROC_COUNT-1:0][4:0] states; 
+logic [`PROC_COUNT-1:0][3:0] states; 
 `endif
 
 
@@ -109,7 +109,7 @@ shared_mem #(
     always_ff @(posedge i_clk or negedge i_rstn) begin 
         if (!i_rstn) begin 
             for (int i = 0 ; i < `PROC_COUNT; i++) begin
-                for (int j = 0 ; j < 9 ; j++) begin 
+                for (int j = 0 ; j < 11 ; j++) begin 
                     state_s[i][j] = 0 ; 
                 end
             end 

@@ -2,7 +2,7 @@
 // run scale: 
 // iverilog -g2012 -DDEBUG -o sim/tb_top.vvp tb_top.sv cam/*.v -DCMD_SIZE=224119  -DMEM_MIN=251783 -DMEM_SIZE=262144 && vvp sim/tb_top.vvp
 `timescale 1ns/1ps
-`ifndef
+`ifndef RECOMP_CMD_SIZE
 `define RECOMP_CMD_SIZE  44 
 `endif
 `ifndef CMD_SIZE
@@ -63,11 +63,6 @@ initial begin
     end
 end
 
-initial begin 
-   $dumpfile("sim/tb_top.vcd");
-   $dumpvars(0, u_top);
-   $dumpvars(1, u_top.u_pool);
-end
 // In this test I will just stall if there is a dependency 
 int mem_file, init_mem_file  ;
 
@@ -111,10 +106,11 @@ initial begin
     end
     $display("Finished decomp stage");
     u_cmd_queue.writePtr = `CMD_SIZE ;
-    #T ;
-    while (!finished_task) begin
+    #T  ;
+    while (!finished_task ) begin
         #T ;
     end
+    $display("%d" , u_top.cycle_count) ; 
     $display("Finished recomp stage");
     #(10*T);
     mem_file = $fopen("py/tests/sim_mem.txt", "w");

@@ -151,8 +151,8 @@ void DecompositionGraphBuilder::SplitTwoWay(ProductNode* node) {
     OpNode* reduce1 = new OpNode(Opcode_t::SUB) ;
     BufferRef ref_0 = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr(), vec->GetRef().GetSize()/2) ;
     BufferRef ref_1 = BufferRef(vec->GetRef().GetBuffer(), vec->GetRef().GetAddr()+vec->GetRef().GetSize()/2, vec->GetRef().GetSize()/2) ;
-    reduce0->SetOperands(p0, p2);//, ref_0) ; // problem here
-    reduce1->SetOperands(p1, p2);//, ref_1) ; 
+    reduce0->SetOperands(p0, p2);//, ref_0) ; // problem here);//
+    reduce1->SetOperands(p1, p2);//, ref_1) ;                );//
     node->AddInput(reduce0) ;
     node->AddInput(reduce1) ;
     reduce0->AddUser(node) ;

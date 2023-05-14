@@ -1,6 +1,6 @@
 #pragma once 
 
-#define BASE_MMUL_2x_SIZE 64// lowest point where we actuall do the multiplication (could try out with different values  later)  
+#define BASE_MMUL_2x_SIZE 128// lowest point where we actuall do the multiplication (could try out with different values  later)  
 #define BASE_MMUL_3x_SIZE 9
 #define MAX_OP_COUNT 127 // 8 bits 
 #define COUNT_BITS 8

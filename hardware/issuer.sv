@@ -462,7 +462,7 @@ end
 //assign next_cmd_info = buf_mem[buf_addr_r][ADDR_WDITH-1:0] ;  
 assign o_rd_queue = (cam_counter <=`MAX_CMDS && state==CMD_GET && !cmd_source)? 1 :0 ; 
 assign o_en_proc = (state==SIMD_SELECT ) ? (`PROC_COUNT'b1 << selected_proc): ( (state==PROC_FINISH && cam_write_en_reg) ? `PROC_COUNT'b1 << finish_bit_pos : 0); 
-assign o_finished_task = (state == IDLE && |i_busy_proc==0 && cam_counter==0) ? 1 : 0;
+assign o_finished_task = (state == IDLE && |i_busy_proc==0 && cam_counter==0 && i_empty_queue) ? 1 : 0;
 //assign o_finished_task = (state == IDLE && |i_busy_proc==0 ) ? 1 : 0;
 
 endmodule   
